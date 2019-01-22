@@ -11,18 +11,17 @@ import java.util.Scanner;
 
 public class NetworkUtils {
 
+    private static final String TAG = NetworkUtils.class.getSimpleName();
+
+
     // A method to storage my api key private. See the build.gradle for more details.
     private static final String apiKey = BuildConfig.ApiKey;
 
-    private static final String MOVIE_BASE_URL = "https://api.themoviedb.org/";
-    private static final String API_VERSION = "3";
-    private static final String MOVIE = "movie";
+    private static final String MOVIE_API_URL_POPULAR = "https://api.themoviedb.org/3/movie/popular?";
 
-    public static URL buildUrl(String sortType) {
-        Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                .appendPath(API_VERSION)
-                .appendPath(MOVIE)
-                .appendPath(sortType)
+
+    public static URL buildPopularUrl() {
+        Uri builtUri = Uri.parse(MOVIE_API_URL_POPULAR).buildUpon()
                 .appendQueryParameter("api_key", apiKey)
                 .build();
 

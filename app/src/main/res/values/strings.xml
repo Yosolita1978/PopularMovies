@@ -2,4 +2,6 @@
     <string name="app_name">Popular Movies</string>
 
     <string name="movie_poster_description">Movie Poster</string>
+
+    <string name="error_message">Error fetching Data</string>
 </resources>

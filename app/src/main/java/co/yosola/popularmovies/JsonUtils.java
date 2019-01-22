@@ -15,11 +15,11 @@ public class JsonUtils {
     //Create all the variables in the Movie Json
 
     private static final String RESULTS = "results";
-    private static final String TITLE = "title";
-    private static final String RELEASE_DATE = "release_date";
-    private static final String SYNOPSIS = "overview";
-    private static final String POSTER_PATH = "poster_path";
     private static final String VOTE_AVERAGE = "vote_average";
+    private static final String ORIGINAL_TITLE = "original_title"; //title
+    private static final String POSTER_PATH = "poster_path";
+    private static final String OVERVIEW = "overview"; // synopsis
+    private static final String RELEASE_DATE = "release_date";
 
     //For debugging reasons
 
@@ -27,7 +27,7 @@ public class JsonUtils {
 
     //Parse the Json to create the new Movie object
 
-    public static ArrayList<Movie> parseMovieJson(Context context, String json) {
+    public static ArrayList<Movie> parseMovieJsonToList(Context context, String json) {
 
         ArrayList<Movie> mMoviesList = new ArrayList<Movie>();
 
@@ -43,15 +43,15 @@ public class JsonUtils {
             int jsonLength = jsonArray.length();
 
             for(int i = 0; i < jsonLength; i++){
-                JSONObject movieTemp = jsonArray.optJSONObject(i);
-                String title = movieTemp.optString(TITLE);
-                String releaseDate = movieTemp.optString(RELEASE_DATE);
-                String synopsis = movieTemp.optString(SYNOPSIS);
-                String posterUrl = movieTemp.optString(POSTER_PATH);
-                Double voteNum = movieTemp.optDouble(VOTE_AVERAGE);
-                String voteString = String.valueOf(voteNum);
+                JSONObject movieData = jsonArray.optJSONObject(i);
+                String title = movieData.optString(ORIGINAL_TITLE);
+                String posterSrc = movieData.getString(POSTER_PATH);
+                String synopsis = movieData.getString(OVERVIEW);
+                String releaseDate = movieData.getString(RELEASE_DATE);
+                double userRating = movieData.optDouble(VOTE_AVERAGE);
+                String voteString = String.valueOf(userRating);
 
-                mMoviesList.add(new Movie(title, releaseDate, synopsis, posterUrl, voteString));
+                mMoviesList.add(new Movie(title, releaseDate, synopsis, posterSrc, voteString));
             }
 
 
