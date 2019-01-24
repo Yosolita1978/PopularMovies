@@ -4,4 +4,15 @@
     <string name="movie_poster_description">Movie Poster</string>
 
     <string name="error_message">Error fetching Data</string>
+
+    <string name="settings">Settings</string>
+
+    <string-array name="sort_orders">
+        <item>Popular</item>
+        <item>Top-rated</item>
+    </string-array>
+
+    <string name="cancel">Cancel</string>
+
+    <string name="ok">OK</string>
 </resources>
