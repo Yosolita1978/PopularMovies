@@ -58,7 +58,7 @@ public class Movie {
     }
 
     public String getmMoviePosterPath() {
-        return IMAGE_BASE_URL + mMoviePosterPath;
+        return mMoviePosterPath;
     }
 
     public void setMoviePosterPath(String moviePosterPath) {

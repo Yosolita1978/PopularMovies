@@ -23,9 +23,6 @@ public class NetworkUtils {
     private static final String PARAM_LANGUAGE = "language";
     private static final String language = "en-US";
 
-    private static final String PARAM_PAGE = "page";
-    private static final String page = "1";
-
     final static String API_KEY_PARAM = "api_key";
 
 
@@ -43,7 +40,6 @@ public class NetworkUtils {
                 .appendPath(sortOrder)
                 .appendQueryParameter(API_KEY_PARAM, apiKey)
                 .appendQueryParameter(PARAM_LANGUAGE, language)
-                .appendQueryParameter(PARAM_PAGE, page)
                 .build();
 
         URL url = null;

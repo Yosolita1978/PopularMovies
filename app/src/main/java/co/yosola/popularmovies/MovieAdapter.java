@@ -2,6 +2,7 @@ package co.yosola.popularmovies;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,6 +54,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
         final Movie movieItem = movieList.get(position);
         String posterUrl = movieItem.getmMoviePosterPath();
+
+//        Log.d(TAG, posterUrl);
         Picasso.get().load(posterUrl)
                 .placeholder(R.drawable.moviedefaultscreen)
                 .into(holder.mPoster);

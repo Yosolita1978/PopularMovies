@@ -1,19 +1,14 @@
 package co.yosola.popularmovies;
 
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -23,7 +18,6 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-
 
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickLister {
@@ -51,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
         mRecyclerView = (RecyclerView) findViewById(R.id.grid);
 
+        //to improve performance of the recycler view with the number of columns to show
         int numberOfColumns = GridLayoutUtils.calculateNumberOfColumns(getApplicationContext());
         GridLayoutManager mGridLayoutManager = new GridLayoutManager(this, numberOfColumns);
 
@@ -80,19 +75,19 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
     //The void to check for network connection
     private boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager)getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         return (networkInfo != null) && (networkInfo.isConnected());
     }
 
     //The method for show the error message
-    private void showErrorMessage(){
+    private void showErrorMessage() {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.VISIBLE);
     }
 
     //Bring the Json and bind it with the adapter
-    private void showJSONData(String jsonData){
+    private void showJSONData(String jsonData) {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.INVISIBLE);
 
@@ -101,71 +96,71 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     }
 
     //The method to star the task in the background.
-    private void startMovieSearch(String sortOrder){
+    private void startMovieSearch(String sortOrder) {
         URL movieSearchURL = NetworkUtils.buildUrl(sortOrder);
         //fetch data on separate thread
         // and initialize the recycler viewer with data from movie adapter
-        new  FetchMovieTask().execute(movieSearchURL);
+        new FetchMovieTask().execute(movieSearchURL);
     }
 
     @Override
     public void onListItemClick(Movie movie) {
 
-        Toast.makeText(this.getBaseContext(),"List item clicked!" + movie.getmMovieTitle(),Toast.LENGTH_LONG).show();
+        Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu){
+    public boolean onCreateOptionsMenu(Menu menu) {
         //inflate the menu
-        getMenuInflater().inflate(R.menu.main_menu,menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem menuItem){
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
         int itemThatWasSelected = menuItem.getItemId();
-        if(itemThatWasSelected == R.id.popular_movies){
-            String popularOrTopRatedMovies = POPULAR;
-            startMovieSearch(popularOrTopRatedMovies);
+        if (itemThatWasSelected == R.id.most_popular) {
+            String sortOrder = POPULAR;
+            startMovieSearch(sortOrder);
             return true;
         }
-        if(itemThatWasSelected == R.id.top_rated_movies){
-            String popularOrTopRatedMovies = TOP_RATED;
-            startMovieSearch(popularOrTopRatedMovies);
+        if (itemThatWasSelected == R.id.top_rated) {
+            String sortOrder = TOP_RATED;
+            startMovieSearch(sortOrder);
             return true;
         }
         return super.onOptionsItemSelected(menuItem);
     }
 
     //Async inner class to fetch network data
-    class FetchMovieTask extends AsyncTask<URL, Void, String>{
+    class FetchMovieTask extends AsyncTask<URL, Void, String> {
 
         @Override
-        protected void onPreExecute(){
+        protected void onPreExecute() {
             super.onPreExecute();
             mLoadingIndicator.setVisibility(View.VISIBLE);
         }
 
         @Override
-        protected String doInBackground(URL... params){
+        protected String doInBackground(URL... params) {
 
             URL searchUrl = params[0];
             String jsonData = null;
             try {
                 jsonData = NetworkUtils.getResponseFromHttpUrl(searchUrl);
-            }catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
             return jsonData;
         }
 
         @Override
-        protected void onPostExecute(String jsonData ){
+        protected void onPostExecute(String jsonData) {
             mLoadingIndicator.setVisibility(View.INVISIBLE);
-            if(jsonData != null && !jsonData.equals("")) {
+            if (jsonData != null && !jsonData.equals("")) {
                 super.onPostExecute(jsonData);
                 showJSONData(jsonData);
-            }else{
+            } else {
                 showErrorMessage();
             }
         }
