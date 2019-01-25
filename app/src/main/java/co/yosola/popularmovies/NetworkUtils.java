@@ -20,9 +20,11 @@ public class NetworkUtils {
 
     private static final String BASE_MOVIE_DB_URL = "http://api.themoviedb.org/3/movie";
 
-    public static final String PATH_MOST_POPULAR_MOVIES = "popular";
+    private static final String PARAM_LANGUAGE = "language";
+    private static final String language = "en-US";
 
-    public static final String PATH_HIGHEST_RATED_MOVIES = "top_rated";
+    private static final String PARAM_PAGE = "page";
+    private static final String page = "1";
 
     final static String API_KEY_PARAM = "api_key";
 
@@ -30,20 +32,25 @@ public class NetworkUtils {
     // A method to storage my api key private. See the build.gradle for more details.
     private static final String apiKey = BuildConfig.ApiKey;
 
+
     /**
      * This method builds the url from provided parameters
      *
      */
     public static URL buildUrl(String sortOrder) {
         // build URL to return TMDb data in popular or top-rated sort order as desired
-        Uri builtUri = Uri.parse(BASE_MOVIE_DB_URL + sortOrder).buildUpon()
+        Uri builtUri = Uri.parse(BASE_MOVIE_DB_URL).buildUpon()
+                .appendPath(sortOrder)
                 .appendQueryParameter(API_KEY_PARAM, apiKey)
+                .appendQueryParameter(PARAM_LANGUAGE, language)
+                .appendQueryParameter(PARAM_PAGE, page)
                 .build();
 
         URL url = null;
         try {
             url = new URL(builtUri.toString());
         } catch (MalformedURLException e) {
+            Log.e(TAG, "Problem making the HTTP request.", e);
             e.printStackTrace();
         }
         return url;
@@ -57,32 +64,25 @@ public class NetworkUtils {
      * @return The contents of the HTTP response.
      * @throws IOException Related to network and stream reading
      */
-    public static String getResponseFromHttpUrl(URL url) throws IOException {
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        try {
-            InputStream in = urlConnection.getInputStream();
+    public static String getResponseFromHttpUrl(URL url)throws  IOException{
 
-            Scanner scanner = new Scanner(in);
+
+        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+
+        try{
+            //Reading from open connection object
+            InputStream inputStream = connection.getInputStream();
+
+            Scanner scanner = new Scanner(inputStream);
             scanner.useDelimiter("\\A");
 
-            boolean hasInput = scanner.hasNext();
-            if (hasInput) {
-                return scanner.next();
-            } else {
+            if(scanner.hasNext()){
+                return  scanner.next();
+            }else{
                 return null;
             }
-        } finally {
-            urlConnection.disconnect();
+        }finally {
+            connection.disconnect();
         }
     }
-
-
-    public static boolean isNetworkAvailable(Context context) {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
-
-
 }

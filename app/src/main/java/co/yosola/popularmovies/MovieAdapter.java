@@ -18,14 +18,21 @@ import java.util.ArrayList;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapterViewHolder> {
 
-    public static final String POSTERS_BASE_URL = "http://image.tmdb.org/t/p/";
-    public static final String POSTER_WIDTH = "w185/";
-    private static final String TAG = MovieAdapter.class.getSimpleName();
-    final private MovieAdapterOnClickHandler mClickHandler;
-    private ArrayList<Movie> mMovies;
 
-    public MovieAdapter(MovieAdapterOnClickHandler movieAdapterOnClickHandler) {
-        mClickHandler = movieAdapterOnClickHandler;
+    private static final String TAG = MovieAdapter.class.getSimpleName();
+    private ArrayList<Movie> movieList;
+
+    //I need this to set the ListitemClickLister;
+    private final ListItemClickLister listItemClickLister;
+
+
+    public interface ListItemClickLister{
+        void onListItemClick(Movie movie);
+    }
+
+    public MovieAdapter(ArrayList<Movie> movieList, ListItemClickLister listItemClickLister){
+        this.movieList = movieList;
+        this.listItemClickLister = listItemClickLister;
     }
 
     @Override
@@ -44,8 +51,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder holder, int position) {
 
-        final Movie movieItem = mMovies.get(position);
-        String posterUrl = POSTERS_BASE_URL + POSTER_WIDTH + movieItem.getmMoviePosterPath();
+        final Movie movieItem = movieList.get(position);
+        String posterUrl = movieItem.getmMoviePosterPath();
         Picasso.get().load(posterUrl)
                 .placeholder(R.drawable.moviedefaultscreen)
                 .into(holder.mPoster);
@@ -56,24 +63,21 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     @Override
     public int getItemCount() {
-        if (mMovies == null) {
+        if (movieList == null) {
             return 0;
         } else {
-            return mMovies.size();
+            return movieList.size();
         }
     }
 
     public void setPosterData(ArrayList<Movie> movies) {
-        if (this.mMovies != null) {
-            this.mMovies.clear();
-            this.mMovies = movies;
+        if (this.movieList != null) {
+            this.movieList.clear();
+            this.movieList = movies;
             notifyDataSetChanged();
         }
     }
 
-    public interface MovieAdapterOnClickHandler {
-        void onClick(Movie clickedItem);
-    }
 
     public class MovieAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public final ImageView mPoster;
@@ -88,8 +92,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
         @Override
         public void onClick(View view) {
-            Movie movie = mMovies.get(getAdapterPosition());
-            mClickHandler.onClick(movie);
+            int adapterPosition = getAdapterPosition();
+            Movie movie = movieList.get(adapterPosition);
+            listItemClickLister.onListItemClick(movie);
         }
     }
 

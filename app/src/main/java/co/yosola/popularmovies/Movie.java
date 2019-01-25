@@ -7,11 +7,13 @@ import android.os.Parcelable;
 import java.util.ArrayList;
 
 public class Movie {
+
     private String mMovieTitle;
     private String mMovieReleaseDate;
     private String mMovieSynopsis;
     private String mMovieVoteAverage;
     private String mMoviePosterPath;
+    private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w185";
 
 
     /**
@@ -27,7 +29,7 @@ public class Movie {
         mMovieTitle = movieTitle;
         mMovieReleaseDate = movieReleaseDate;
         mMovieSynopsis = movieSynopsis;
-        mMoviePosterPath = moviePosterPath;
+        mMoviePosterPath = IMAGE_BASE_URL + moviePosterPath;;
         mMovieVoteAverage = movieVoteAverage;
     }
 
@@ -56,11 +58,11 @@ public class Movie {
     }
 
     public String getmMoviePosterPath() {
-        return mMoviePosterPath;
+        return IMAGE_BASE_URL + mMoviePosterPath;
     }
 
     public void setMoviePosterPath(String moviePosterPath) {
-        this.mMoviePosterPath = moviePosterPath;
+        this.mMoviePosterPath = IMAGE_BASE_URL + moviePosterPath;
     }
 
     public String getmMovieVoteAverage() {

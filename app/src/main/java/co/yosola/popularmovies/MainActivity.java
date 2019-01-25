@@ -1,7 +1,11 @@
 package co.yosola.popularmovies;
 
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -16,16 +20,19 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import co.yosola.popularmovies.MovieAdapter.MovieAdapterOnClickHandler;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapterOnClickHandler {
+
+public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickLister {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String POPULAR = "popular";
     private static final String TOP_RATED = "top_rated";
+
+    private ArrayList<Movie> movieList;
 
     private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
@@ -48,150 +55,121 @@ public class MainActivity extends AppCompatActivity implements MovieAdapterOnCli
         GridLayoutManager mGridLayoutManager = new GridLayoutManager(this, numberOfColumns);
 
         mRecyclerView.setLayoutManager(mGridLayoutManager);
-        mMovieAdapter = new MovieAdapter(this);
+        //to improve performance of the recycler view
+        mRecyclerView.setHasFixedSize(true);
+
+
+        //initialize adapter and set to the recycler view object
+        movieList = new ArrayList<>();
+        mMovieAdapter = new MovieAdapter(movieList, this);
         mRecyclerView.setAdapter(mMovieAdapter);
 
 
         // display progress bar, and load and display posters in preferred sort order
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progress_bar);
-        String sortOrder = getSortOrderSetting();
-        loadPosters(sortOrder);
+
+        //check for network connection
+        if (isNetworkAvailable()) {
+            //build the url string - default to 'popular movies'
+            startMovieSearch(POPULAR);
+        } else {
+            showErrorMessage();
+        }
 
     }
 
-    public String getSortOrderSetting() {
-        SharedPreferences mSettings = this.getSharedPreferences("Settings", 0);
-        return mSettings.getString("sortOrder", POPULAR);
+    //The void to check for network connection
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager)getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        return (networkInfo != null) && (networkInfo.isConnected());
     }
 
-    public void saveSortOrderSetting(String sortOrder) {
-        SharedPreferences mSettings = this.getSharedPreferences("Settings", 0);
-        SharedPreferences.Editor editor = mSettings.edit();
-        editor.putString("sortOrder", sortOrder);
-        editor.apply();
+    //The method for show the error message
+    private void showErrorMessage(){
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
+        mErrorMessageDisplay.setVisibility(View.VISIBLE);
+    }
+
+    //Bring the Json and bind it with the adapter
+    private void showJSONData(String jsonData){
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
+        mErrorMessageDisplay.setVisibility(View.INVISIBLE);
+
+        movieList = JsonUtils.parseMovieJsonToList(this, jsonData);
+        mMovieAdapter.setPosterData(movieList);
+    }
+
+    //The method to star the task in the background.
+    private void startMovieSearch(String sortOrder){
+        URL movieSearchURL = NetworkUtils.buildUrl(sortOrder);
+        //fetch data on separate thread
+        // and initialize the recycler viewer with data from movie adapter
+        new  FetchMovieTask().execute(movieSearchURL);
     }
 
     @Override
-    public void onClick(Movie movie) {
-        // tapping a poster brings up DetailActivity with details. For now it makes a Toast
-        Toast.makeText(MainActivity.this, movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
-    }
+    public void onListItemClick(Movie movie) {
 
-    private void loadPosters(String sortOrder) {
-        showPosters();
-        new FetchMovieTask().execute(sortOrder);
+        Toast.makeText(this.getBaseContext(),"List item clicked!" + movie.getmMovieTitle(),Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // inflate the menu, with the settings action
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_menu, menu);
+    public boolean onCreateOptionsMenu(Menu menu){
+        //inflate the menu
+        getMenuInflater().inflate(R.menu.main_menu,menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // bring up the settings dialog if the settings menu option is selected
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            settingsMenu();
+    public boolean onOptionsItemSelected(MenuItem menuItem){
+        int itemThatWasSelected = menuItem.getItemId();
+        if(itemThatWasSelected == R.id.popular_movies){
+            String popularOrTopRatedMovies = POPULAR;
+            startMovieSearch(popularOrTopRatedMovies);
             return true;
         }
-        return super.onOptionsItemSelected(item);
+        if(itemThatWasSelected == R.id.top_rated_movies){
+            String popularOrTopRatedMovies = TOP_RATED;
+            startMovieSearch(popularOrTopRatedMovies);
+            return true;
+        }
+        return super.onOptionsItemSelected(menuItem);
     }
 
-    private void settingsMenu() {
-        // the settings dialog lets you select betwen popular and top-rated poster display sort orders
-        String sortOrder = getSortOrderSetting();
-        final String previousSortOrder = sortOrder;
-        int currentSetting = sortOrder.equals(POPULAR) ? 0 : 1;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        // show radio buttons for the two options, with the current option selected
-        builder.setTitle("Select poster sort order").setSingleChoiceItems(R.array.sort_orders, currentSetting,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                });
-
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                AlertDialog alert = (AlertDialog) dialog;
-                int selectedPosition = alert.getListView().getCheckedItemPosition();
-                String sortOrder = new String[]{POPULAR, TOP_RATED}[selectedPosition];
-                // if they changed the sort order and clicked OK, update both preferences and the display
-                if (!sortOrder.equals(previousSortOrder)) {
-                    saveSortOrderSetting(sortOrder);
-                    loadPosters(sortOrder);
-                }
-            }
-        });
-
-        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                // if they canceled, don't do anything
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-
-    private void showPosters() {
-        mErrorMessageDisplay.setVisibility(View.INVISIBLE);
-        mRecyclerView.setVisibility(View.VISIBLE);
-    }
-
-    private void showErrorMessage(String errorMessage) {
-        mRecyclerView.setVisibility(View.INVISIBLE);
-        mErrorMessageDisplay.setText(errorMessage);
-        mErrorMessageDisplay.setVisibility(View.VISIBLE);
-    }
-
-    // using a background task, get the TMDb data and display the posters
-    public class FetchMovieTask extends AsyncTask<String, Void, ArrayList<Movie>> {
+    //Async inner class to fetch network data
+    class FetchMovieTask extends AsyncTask<URL, Void, String>{
 
         @Override
-        protected void onPreExecute() {
+        protected void onPreExecute(){
             super.onPreExecute();
             mLoadingIndicator.setVisibility(View.VISIBLE);
         }
 
         @Override
-        protected ArrayList<Movie> doInBackground(String... params) {
-            String sortOrder = params[0];
+        protected String doInBackground(URL... params){
 
-            URL postersRequestUrl = NetworkUtils.buildUrl(sortOrder);
-
+            URL searchUrl = params[0];
+            String jsonData = null;
             try {
-                String jsonResponse = NetworkUtils.getResponseFromHttpUrl(postersRequestUrl);
-
-                ArrayList<Movie> moviesFromJson = JsonUtils.parseMovieJsonToList(MainActivity.this, jsonResponse);
-
-                return moviesFromJson;
-
-            } catch (Exception e) {
+                jsonData = NetworkUtils.getResponseFromHttpUrl(searchUrl);
+            }catch (IOException e){
                 e.printStackTrace();
-                return null;
             }
+            return jsonData;
         }
 
         @Override
-        protected void onPostExecute(ArrayList<Movie> movies) {
+        protected void onPostExecute(String jsonData ){
             mLoadingIndicator.setVisibility(View.INVISIBLE);
-            if (movies != null) {
-                showPosters();
-                mMovieAdapter.setPosterData(movies);
-            } else {
-                showErrorMessage("No data was received - please check your Internet connection and try again.");
+            if(jsonData != null && !jsonData.equals("")) {
+                super.onPostExecute(jsonData);
+                showJSONData(jsonData);
+            }else{
+                showErrorMessage();
             }
         }
     }
-
-
 
 
 }
