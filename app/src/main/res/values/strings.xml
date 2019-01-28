@@ -21,4 +21,12 @@
     <string name="top_rated_movies">Top Rated Movies</string>
 
     <string name="menu_item">Order By</string>
+
+    <!-- Content descriptions-->
+    <string name="movie_title_detail">Movie Title</string>
+    <string name="movie_release_date_detail">Movie Release Date</string>
+    <string name="movie_synopsis">Movie Synopsis</string>
+    <string name="movie_vote_average_detail">Movie Vote Average</string>
+
+
 </resources>

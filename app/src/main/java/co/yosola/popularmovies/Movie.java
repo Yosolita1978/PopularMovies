@@ -62,7 +62,7 @@ public class Movie {
     }
 
     public void setMoviePosterPath(String moviePosterPath) {
-        this.mMoviePosterPath = IMAGE_BASE_URL + moviePosterPath;
+        this.mMoviePosterPath = moviePosterPath;
     }
 
     public String getmMovieVoteAverage() {

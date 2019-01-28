@@ -1,6 +1,7 @@
 package co.yosola.popularmovies;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -107,6 +108,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     public void onListItemClick(Movie movie) {
 
         Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+        intent.putExtra("movie_title", movie.getmMovieTitle());
+        intent.putExtra("movie_release", movie.getmMovieReleaseDate());
+        intent.putExtra("movie_poster_url", movie.getmMoviePosterPath());
+        intent.putExtra("movie_vote", movie.getmMovieVoteAverage());
+        intent.putExtra("movie_synopsis", movie.getmMovieSynopsis());
+        startActivity(intent);
     }
 
     @Override
