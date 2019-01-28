@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             startMovieSearch(POPULAR);
         } else {
             showErrorMessage();
+            mErrorMessageDisplay.setText(R.string.error_message_internet);
         }
 
     }
@@ -107,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     @Override
     public void onListItemClick(Movie movie) {
 
-        Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
+        //Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
         intent.putExtra("movie_title", movie.getmMovieTitle());
         intent.putExtra("movie_release", movie.getmMovieReleaseDate());
@@ -170,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
                 showJSONData(jsonData);
             } else {
                 showErrorMessage();
+                mErrorMessageDisplay.setText(R.string.error_message);
             }
         }
     }

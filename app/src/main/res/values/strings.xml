@@ -3,7 +3,10 @@
 
     <string name="movie_poster_description">Movie Poster</string>
 
-    <string name="error_message">Error fetching Data</string>
+    <!-- Error messages-->
+    <string name="error_message">Movie data not available</string>
+
+    <string name="error_message_internet">Oops, it seems that you phone doesn\'t have Internet connection</string>
 
     <string name="settings">Settings</string>
 
@@ -24,9 +27,11 @@
 
     <!-- Content descriptions-->
     <string name="movie_title_detail">Movie Title</string>
-    <string name="movie_release_date_detail">Movie Release Date</string>
+    <string name="movie_release_label">Release Date: </string>
+    <string name="movie_release_date_detail">2018/12/07</string>
     <string name="movie_synopsis">Movie Synopsis</string>
-    <string name="movie_vote_average_detail">Movie Vote Average</string>
+    <string name="movie_vote_label">Vote Average: </string>
+    <string name="movie_vote_average_detail">69</string>
 
 
 </resources>
