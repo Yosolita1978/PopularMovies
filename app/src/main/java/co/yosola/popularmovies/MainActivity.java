@@ -69,22 +69,28 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         // display progress bar, and load and display posters in preferred sort order
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progress_bar);
 
-        //set the tittle of the app - default to 'popular movies'
-        setTitle(titleBySort);
 
         //check for network connection
         if(!isNetworkAvailable()){
             showErrorMessage();
             mErrorMessageDisplay.setText(R.string.error_message_internet);
-        } else {
-            if (savedInstanceState != null){
+        }
+
+        if (savedInstanceState != null){
                 sortOrder = savedInstanceState.getString(STATE_QUERY);
                 titleBySort = savedInstanceState.getString(STATE_TITLE);
                 setTitle(titleBySort);
                 //build the url string
                 startMovieSearch(sortOrder);
-            }
+        } else{
+            //set the tittle of the app - default to 'popular movies'
+            setTitle(titleBySort);
+
+            //build the url string - default to 'popular movies'
+            startMovieSearch(sortOrder);
+
         }
+
 
     }
 
@@ -152,14 +158,14 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     public boolean onOptionsItemSelected(MenuItem menuItem) {
         int itemThatWasSelected = menuItem.getItemId();
         if (itemThatWasSelected == R.id.most_popular) {
-            String sortOrder = POPULAR;
+            sortOrder = POPULAR;
             setTitle(titleBySort);
             startMovieSearch(sortOrder);
             return true;
         }
         if (itemThatWasSelected == R.id.top_rated) {
-            String sortOrder = TOP_RATED;
-            String titleBySort = "Top Rated Movies";
+            sortOrder = TOP_RATED;
+            titleBySort = "Top Rated Movies";
             setTitle(titleBySort);
             startMovieSearch(sortOrder);
             return true;
