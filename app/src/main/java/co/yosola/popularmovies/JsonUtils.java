@@ -2,7 +2,6 @@ package co.yosola.popularmovies;
 
 import android.content.Context;
 import android.text.TextUtils;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,7 +41,7 @@ public class JsonUtils {
 
             int jsonLength = jsonArray.length();
 
-            for(int i = 0; i < jsonLength; i++){
+            for (int i = 0; i < jsonLength; i++) {
                 JSONObject movieData = jsonArray.optJSONObject(i);
                 String title = movieData.optString(ORIGINAL_TITLE);
                 String posterSrc = movieData.getString(POSTER_PATH);
@@ -57,7 +56,7 @@ public class JsonUtils {
 
 
         } catch (JSONException e) {
-            Log.d(TAG, "An error had occurred on JSON Parsing");
+            //Log.d(TAG, "An error had occurred on JSON Parsing");
             e.printStackTrace();
         }
 

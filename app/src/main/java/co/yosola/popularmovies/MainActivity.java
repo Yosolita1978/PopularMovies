@@ -14,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,6 +25,12 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String POPULAR = "popular";
     private static final String TOP_RATED = "top_rated";
+
+    private static final String STATE_QUERY = "stateQuery";
+    private static final String STATE_TITLE = "stateTitle";
+
+    private String titleBySort = "Popular Movies";
+    private String sortOrder = "popular";
 
     private ArrayList<Movie> movieList;
 
@@ -64,13 +69,21 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         // display progress bar, and load and display posters in preferred sort order
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progress_bar);
 
+        //set the tittle of the app - default to 'popular movies'
+        setTitle(titleBySort);
+
         //check for network connection
-        if (isNetworkAvailable()) {
-            //build the url string - default to 'popular movies'
-            startMovieSearch(POPULAR);
-        } else {
+        if(!isNetworkAvailable()){
             showErrorMessage();
             mErrorMessageDisplay.setText(R.string.error_message_internet);
+        } else {
+            if (savedInstanceState != null){
+                sortOrder = savedInstanceState.getString(STATE_QUERY);
+                titleBySort = savedInstanceState.getString(STATE_TITLE);
+                setTitle(titleBySort);
+                //build the url string
+                startMovieSearch(sortOrder);
+            }
         }
 
     }
@@ -106,6 +119,16 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        String lastQuerySaved = sortOrder;
+        String lastTitleSaved = titleBySort;
+        outState.putString(STATE_QUERY, lastQuerySaved);
+        outState.putString(STATE_TITLE, lastTitleSaved);
+
+    }
+
+    @Override
     public void onListItemClick(Movie movie) {
 
         //Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
@@ -130,11 +153,14 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         int itemThatWasSelected = menuItem.getItemId();
         if (itemThatWasSelected == R.id.most_popular) {
             String sortOrder = POPULAR;
+            setTitle(titleBySort);
             startMovieSearch(sortOrder);
             return true;
         }
         if (itemThatWasSelected == R.id.top_rated) {
             String sortOrder = TOP_RATED;
+            String titleBySort = "Top Rated Movies";
+            setTitle(titleBySort);
             startMovieSearch(sortOrder);
             return true;
         }

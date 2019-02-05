@@ -25,14 +25,14 @@ public class DetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-        Log.d(TAG, "onCreate: started.");
+        //Log.d(TAG, "onCreate: started.");
 
         getIncomingIntent();
 
     }
 
     private void getIncomingIntent() {
-        Log.d(TAG, "getIncomingIntent: checking for incoming intents.");
+        //Log.d(TAG, "getIncomingIntent: checking for incoming intents.");
 
         Intent intent = getIntent();
         Bundle extras = intent.getExtras();
@@ -56,7 +56,7 @@ public class DetailActivity extends AppCompatActivity {
             setUI(newMovie);
 
         } else {
-            Log.d(TAG, "Something went  wrong with the intent");
+            //Log.d(TAG, "Something went  wrong with the intent");
 
             setUI(new Movie());
         }
@@ -64,7 +64,7 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void setUI(Movie movie) {
-        Log.d(TAG, "setUI: setting the UI with the current Movie.");
+        //Log.d(TAG, "setUI: setting the UI with the current Movie.");
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
         mMovieTitle.setText(movie.getmMovieTitle());
