@@ -2,6 +2,7 @@ package co.yosola.popularmovies;
 
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,6 +15,7 @@ public class JsonUtils {
     //Create all the variables in the Movie Json
 
     private static final String RESULTS = "results";
+    private static final String ID = "id";
     private static final String VOTE_AVERAGE = "vote_average";
     private static final String ORIGINAL_TITLE = "original_title"; //title
     private static final String POSTER_PATH = "poster_path";
@@ -43,6 +45,7 @@ public class JsonUtils {
 
             for (int i = 0; i < jsonLength; i++) {
                 JSONObject movieData = jsonArray.optJSONObject(i);
+                int movieID = movieData.getInt(ID);
                 String title = movieData.optString(ORIGINAL_TITLE);
                 String posterSrc = movieData.getString(POSTER_PATH);
                 String synopsis = movieData.getString(OVERVIEW);
@@ -50,13 +53,13 @@ public class JsonUtils {
                 double userRating = movieData.optDouble(VOTE_AVERAGE);
                 String voteString = String.valueOf(userRating);
 
-                mMoviesList.add(new Movie(title, releaseDate, synopsis, posterSrc, voteString));
-                //Log.d(TAG, posterSrc);
+                mMoviesList.add(new Movie(movieID, title, releaseDate, synopsis, posterSrc, voteString));
+                Log.d(TAG, movieID + "");
             }
 
 
         } catch (JSONException e) {
-            //Log.d(TAG, "An error had occurred on JSON Parsing");
+            Log.d(TAG, "An error had occurred on JSON Parsing");
             e.printStackTrace();
         }
 

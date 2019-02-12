@@ -14,6 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.URL;
@@ -137,8 +138,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     @Override
     public void onListItemClick(Movie movie) {
 
-        //Toast.makeText(this.getBaseContext(), "List item clicked!" + movie.getmMovieTitle(), Toast.LENGTH_LONG).show();
+        Toast.makeText(this.getBaseContext(), "Movie Item: " + String.valueOf(movie.getMovieID()), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+        intent.putExtra("movie_id", movie.getMovieID());
         intent.putExtra("movie_title", movie.getmMovieTitle());
         intent.putExtra("movie_release", movie.getmMovieReleaseDate());
         intent.putExtra("movie_poster_url", movie.getmMoviePosterPath());

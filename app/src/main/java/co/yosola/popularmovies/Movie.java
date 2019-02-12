@@ -11,6 +11,7 @@ public class Movie {
     private String mMovieSynopsis;
     private String mMovieVoteAverage;
     private String mMoviePosterPath;
+    private int mMovieID;
 
 
     /**
@@ -22,7 +23,8 @@ public class Movie {
 
     //This is my constructor
 
-    public Movie(String movieTitle, String movieReleaseDate, String movieSynopsis, String moviePosterPath, String movieVoteAverage) {
+    public Movie(int movieID, String movieTitle, String movieReleaseDate, String movieSynopsis, String moviePosterPath, String movieVoteAverage) {
+        mMovieID = movieID;
         mMovieTitle = movieTitle;
         mMovieReleaseDate = movieReleaseDate;
         mMovieSynopsis = movieSynopsis;
@@ -31,14 +33,6 @@ public class Movie {
         mMovieVoteAverage = movieVoteAverage;
     }
 
-    public static ArrayList<Movie> createMovieList(int numJsonObjects) {
-        ArrayList<Movie> moviesArrayList = new ArrayList<Movie>();
-        for (int i = 0; i < numJsonObjects; i++) {
-            moviesArrayList.add(new Movie());
-        }
-
-        return moviesArrayList;
-    }
 
     public String getmMovieTitle() {
         return mMovieTitle;
@@ -80,5 +74,11 @@ public class Movie {
         this.mMovieVoteAverage = movieVoteAverage;
     }
 
+    public int getMovieID() {
+        return mMovieID;
+    }
 
+    public void setMovieID(int mMovieID) {
+        this.mMovieID = mMovieID;
+    }
 }

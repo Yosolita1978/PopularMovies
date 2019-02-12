@@ -33,5 +33,9 @@
     <string name="movie_vote_label">Vote Average: </string>
     <string name="movie_vote_average_detail">69</string>
 
+    <!-- Trailers needed strings-->
+    <string name="trailer_title">Trailers</string>
+    <string name="no_trailers">No trailers available</string>
+
 
 </resources>

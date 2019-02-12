@@ -1,6 +1,7 @@
 package co.yosola.popularmovies;
 
 import android.net.Uri;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,7 @@ public class NetworkUtils {
     final static String API_KEY_PARAM = "api_key";
     private static final String TAG = NetworkUtils.class.getSimpleName();
     private static final String BASE_MOVIE_DB_URL = "http://api.themoviedb.org/3/movie";
+    private static final String VIDEOS = "videos";
     private static final String PARAM_LANGUAGE = "language";
     private static final String language = "en-US";
     // A method to storage my api key private. See the build.gradle for more details.
@@ -37,6 +39,25 @@ public class NetworkUtils {
             url = new URL(builtUri.toString());
         } catch (MalformedURLException e) {
             //Log.e(TAG, "Problem making the HTTP request.", e);
+            e.printStackTrace();
+        }
+        return url;
+    }
+
+    /**
+     * This method builds the url to show the trailers
+     */
+    public static URL buildTrailersUrl(String movieid) {
+        Uri uri = Uri.parse(BASE_MOVIE_DB_URL).buildUpon()
+                .appendPath(movieid)
+                .appendPath(VIDEOS)
+                .appendQueryParameter(API_KEY_PARAM, apiKey)
+                .build();
+        URL url = null;
+        try {
+            url = new URL(uri.toString());
+        } catch (MalformedURLException e) {
+            Log.e(TAG, "Problem making the HTTP request to trailers", e);
             e.printStackTrace();
         }
         return url;
