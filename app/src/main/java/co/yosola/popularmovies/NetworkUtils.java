@@ -17,6 +17,7 @@ public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName();
     private static final String BASE_MOVIE_DB_URL = "http://api.themoviedb.org/3/movie";
     private static final String VIDEOS = "videos";
+    private static final String REVIEWS = "reviews";
     private static final String PARAM_LANGUAGE = "language";
     private static final String language = "en-US";
     // A method to storage my api key private. See the build.gradle for more details.
@@ -57,7 +58,26 @@ public class NetworkUtils {
         try {
             url = new URL(uri.toString());
         } catch (MalformedURLException e) {
-            Log.e(TAG, "Problem making the HTTP request to trailers", e);
+            //Log.e(TAG, "Problem making the HTTP request to trailers", e);
+            e.printStackTrace();
+        }
+        return url;
+    }
+
+    /**
+     * This method builds the url to show the reviews
+     */
+    public static URL buildReviewsUrl(String movieid) {
+        Uri uri = Uri.parse(BASE_MOVIE_DB_URL).buildUpon()
+                .appendPath(movieid)
+                .appendPath(REVIEWS)
+                .appendQueryParameter(API_KEY_PARAM, apiKey)
+                .build();
+        URL url = null;
+        try {
+            url = new URL(uri.toString());
+        } catch (MalformedURLException e) {
+            Log.e(TAG, "Problem making the HTTP request to reviews", e);
             e.printStackTrace();
         }
         return url;

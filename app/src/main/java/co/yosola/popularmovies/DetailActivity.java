@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
@@ -26,23 +27,34 @@ import java.net.URL;
 public class DetailActivity extends AppCompatActivity {
 
     private static final String TAG = "DetailActivity";
-
     private static final String TRAILER_THUMBNAIL_BASE_PATH = "https://img.youtube.com/vi/";
     private static final String END_THUMBNAIL_PATH = "/0.jpg";
     private static final String TRAILER_BASE_URL = "http://youtube.com/watch?v=";
 
+    private static final String LAST_XCOORD = "stateXCoord";
+    private static final String LAST_YCOORD = "stateYCoord";
 
+    //Variables to the Movie Object
+    private ScrollView mDetailScrollView;
+    private String mMovieId;
     private TextView mMovieTitle;
-
     private ImageView mMoviePoster;
-
     private TextView mMovieRelease;
     private TextView mMovieVote;
     private TextView mMoviesynopsis;
 
-    private String mMovieId;
+    //Variables to the Trailer object
     private LinearLayout mTrailerList;
     private String[] mTrailerKeys;
+
+    //Variables to the Review Object
+    private LinearLayout mReviewList;
+    private String[] mReviewAuthors;
+    private String[] mReviewContent;
+    private int reviewCounter;
+    private TextView mAuthorReview;
+    private TextView mContentReview;
+    private Button mNextReview;
 
 
     @Override
@@ -51,11 +63,35 @@ public class DetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_detail);
         //Log.d(TAG, "onCreate: started.");
 
+        mDetailScrollView = findViewById(R.id.detail_scroll_view);
         mTrailerList = findViewById(R.id.trailer_list);
+        mReviewList = findViewById(R.id.review_list);
+
+        reviewCounter = 0;
 
         getIncomingIntent();
         new FetchTrailersTask().execute();
+        new FetchReviewsTask().execute();
 
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        int xCoord = mDetailScrollView.getScrollX();
+        int yCoord = mDetailScrollView.getScrollY();
+        outState.putInt(LAST_XCOORD, xCoord);
+        outState.putInt(LAST_YCOORD, yCoord);
+
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if (savedInstanceState != null) {
+            mDetailScrollView.scrollTo(savedInstanceState.getInt(LAST_XCOORD),
+                    savedInstanceState.getInt(LAST_YCOORD));
+        }
     }
 
     private void getIncomingIntent() {
@@ -231,6 +267,86 @@ public class DetailActivity extends AppCompatActivity {
         trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
         trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    }
+
+    public class FetchReviewsTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                URL reviewsRequestUrl = NetworkUtils.buildReviewsUrl(mMovieId);
+                return NetworkUtils.getResponseFromHttpUrl(reviewsRequestUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            extractReviews(result);
+            loadCorrectReviewUI();
+        }
+    }
+
+    public void extractReviews(String reviewsResponse) {
+        try {
+            JSONObject jsonReviewsObject = new JSONObject(reviewsResponse);
+            JSONArray reviewsResults = jsonReviewsObject.getJSONArray("results");
+            mReviewAuthors = new String[reviewsResults.length()];
+            mReviewContent = new String[reviewsResults.length()];
+            for (int i = 0; i < reviewsResults.length(); i++)
+            {
+                mReviewAuthors[i] = reviewsResults.getJSONObject(i).optString("author");
+                mReviewContent[i] = reviewsResults.getJSONObject(i).optString("content");
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadCorrectReviewUI(){
+        if (mReviewContent.length == 0){
+            TextView reviewView = createNoReviewsView(this, mReviewList);
+        } else{
+            if (mReviewContent.length == 1) {
+                findViewById(R.id.next_review_button).setVisibility(View.GONE);
+
+            }
+            String authorLabel = getResources().getString(R.string.author_review_label);
+            String authorHeader = authorLabel + " " +  mReviewAuthors[reviewCounter];
+            ((TextView) findViewById(R.id.author_text)).setText(authorHeader);
+            ((TextView) findViewById(R.id.content_text)).setText(mReviewContent[reviewCounter]);
+            findViewById(R.id.next_review_button).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (reviewCounter < mReviewContent.length - 1) { reviewCounter++; }
+                    else { reviewCounter = 0; }
+                    loadCorrectReviewUI();
+                }
+            });
+        }
+    }
+
+    // Helper method to return the TextView with no Reviews inside the LinearLayout
+    private TextView createNoReviewsView(Context context, LinearLayout container) {
+
+        mAuthorReview = findViewById(R.id.author_text);
+        mAuthorReview.setVisibility(View.GONE);
+
+        mContentReview = findViewById(R.id.content_text);
+        mContentReview.setVisibility(View.GONE);
+
+        mNextReview = findViewById(R.id.next_review_button);
+        mNextReview.setVisibility(View.GONE);
+
+
+        TextView reviewView = new TextView(context);
+        reviewView.setText(R.string.no_reviews);
+        reviewView.setPadding(0, 0, 0, 50);
+        reviewView.setTextSize(15);
+        container.addView(reviewView);
+
+        return reviewView;
     }
 
 

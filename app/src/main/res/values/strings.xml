@@ -37,5 +37,13 @@
     <string name="trailer_title">Trailers</string>
     <string name="no_trailers">No trailers available</string>
 
+    <!-- Reviews needed strings-->
+    <string name="reviews_title">Reviews</string>
+    <string name="no_reviews">No reviews available</string>
+    <string name="author_review_label"> Author:</string>
+    <string name="author_review_placeholder"> Author Review Placeholder</string>
+    <string name="content_reviews">Comment excerpt. Long placeholder location that should wrap to more than 2 lines of text</string>
+    <string name="next_reviews">Next</string>
+
 
 </resources>
