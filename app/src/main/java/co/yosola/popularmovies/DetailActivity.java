@@ -1,8 +1,10 @@
 package co.yosola.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -17,6 +19,7 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.net.URL;
 
@@ -24,13 +27,10 @@ public class DetailActivity extends AppCompatActivity {
 
     private static final String TAG = "DetailActivity";
 
-    //private static final String TRAILER_THUMBNAIL_BASE_PATH = "https://img.youtube.com/vi/";
-    //private static final String END_THUMBNAIL_PATH = "/0.jpg";
+    private static final String TRAILER_THUMBNAIL_BASE_PATH = "https://img.youtube.com/vi/";
+    private static final String END_THUMBNAIL_PATH = "/0.jpg";
+    private static final String TRAILER_BASE_URL = "http://youtube.com/watch?v=";
 
-    private final String TRAILER_BASE_URL = "http://youtube.com/watch?v=";
-    private final String PARAM_RESULTS = "results";
-    private final String PARAM_KEY = "key";
-    private final String PARAM_NAME = "name";
 
     private TextView mMovieTitle;
 
@@ -40,10 +40,9 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mMovieVote;
     private TextView mMoviesynopsis;
 
-    private String[] mTrailerKeys;
-    private String[] mTrailerNames;
     private String mMovieId;
     private LinearLayout mTrailerList;
+    private String[] mTrailerKeys;
 
 
     @Override
@@ -74,7 +73,7 @@ public class DetailActivity extends AppCompatActivity {
         String movieSynopsis_temp = extras.getString("movie_synopsis");
 
         if (movieTitle_temp != null && movieRelease_temp != null && moviePoster_temp != null && movieVote_temp != null && movieSynopsis_temp != null) {
-            Log.d(TAG, "getIncomingIntent: " + movieTitle_temp + movieRelease_temp + moviePoster_temp + movieVote_temp + movieSynopsis_temp);
+            //Log.d(TAG, "getIncomingIntent: " + movieTitle_temp + movieRelease_temp + moviePoster_temp + movieVote_temp + movieSynopsis_temp);
 
             Movie newMovie = new Movie();
             newMovie.setMovieTitle(movieTitle_temp);
@@ -131,56 +130,109 @@ public class DetailActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             extractTrailerData(result);
-            loadTrailerUI();
+            loadCorrectTrailerUI();
         }
     }
 
     public void extractTrailerData(String trailersResponse) {
         try {
-            JSONObject jsonTrailersObject = new JSONObject(trailersResponse);
-            JSONArray trailersResults = jsonTrailersObject.getJSONArray(PARAM_RESULTS);
-            mTrailerKeys = new String[trailersResults.length()];
-            mTrailerNames = new String[trailersResults.length()];
-            for (int i = 0; i < trailersResults.length(); i++)
-            {
-                mTrailerKeys[i] = trailersResults.getJSONObject(i).optString(PARAM_KEY);
-                mTrailerNames[i] = trailersResults.getJSONObject(i).optString(PARAM_NAME);
+            JSONObject trailersJSON = new JSONObject(trailersResponse);
+            JSONArray trailersArray = trailersJSON.getJSONArray("results");
+            mTrailerKeys = new String[trailersArray.length()];
+
+            for (int i = 0; i < trailersArray.length(); i++) {
+
+                mTrailerKeys[i] = trailersArray.getJSONObject(i).optString("key");
+
             }
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    private void loadTrailerUI() {
-        if (mTrailerKeys.length == 0) {
-            TextView noTrailers = new TextView(this);
-            noTrailers.setText(R.string.no_trailers);
-            noTrailers.setPadding(0, 0, 0, 50);
-            noTrailers.setTextSize(15);
-            mTrailerList.addView(noTrailers);
-        }
-        else {
-            for (int i = 0; i < mTrailerKeys.length; i++) {
-                Button trailerItem = new Button(this);
-                trailerItem.setText(mTrailerNames[i]);
-                trailerItem.setPadding(0, 30, 0, 30);
-                trailerItem.setTextSize(15);
-                final String trailerUrl = TRAILER_BASE_URL + mTrailerKeys[i];
-                trailerItem.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        
-                        Uri youtubeLink = Uri.parse(trailerUrl);
-                        Intent youtubeIntent = new Intent(Intent.ACTION_VIEW, youtubeLink);
-                        if (youtubeIntent.resolveActivity(getPackageManager()) != null) {
-                            startActivity(youtubeIntent);
-                        }
-                    }
-                });
-                mTrailerList.addView(trailerItem);
+    // Helper method to know if the results of the request are display in a Textview or and ImageView
+    private void loadCorrectTrailerUI(){
+        if (mTrailerKeys.length == 0){
+            TextView trailerView = createNoTrailersView(this, mTrailerList, 0);
+        } else {
+            for (int i = 0; i < mTrailerKeys.length; i++){
+                final String trailerKey = mTrailerKeys[i];
+                ImageView trailerView = createTrailerView(this, mTrailerList, i);
+                loadMovieTrailerThumbnail(trailerView, trailerKey);
+                setTrailerOnClickListener(this, trailerView, trailerKey);
             }
         }
     }
+
+    // Helper method to return the TextView with no Trailers inside the LinearLayout
+    private static TextView createNoTrailersView(Context context, LinearLayout container, int index) {
+        TextView trailerView = new TextView(context);
+        trailerView.setText(R.string.no_trailers);
+        trailerView.setPadding(0, 0, 0, 50);
+        trailerView.setTextSize(15);
+        container.addView(trailerView, index);
+
+        return trailerView;
+    }
+
+    // Helper method to return the ImageView inside the LinearLayout
+    private static ImageView createTrailerView(Context context, LinearLayout container, int index) {
+        ImageView trailerView = new ImageView(context);
+        setTrailerViewProperties(context, trailerView);
+        container.addView(trailerView, index);
+
+        return trailerView;
+    }
+
+    // Helper method to set the image in the ImageView using Picasso
+    private void loadMovieTrailerThumbnail(ImageView trailerView, String trailerKey) {
+
+        String trailerURL = TRAILER_THUMBNAIL_BASE_PATH + trailerKey + END_THUMBNAIL_PATH;
+
+        Picasso.get().load(trailerURL)
+                .placeholder(R.drawable.teasertrailers)
+                .fit()
+                .into(trailerView);
+    }
+
+    // Helper method to set an OnClickListener for each trailer in the results
+    private static void setTrailerOnClickListener(final Context context, ImageView trailerView, final String trailerKey) {
+        trailerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                launchTrailer(context, trailerKey);
+            }
+        });
+    }
+
+    // Helper method to start the Youtube intent on each trailer in the list
+    private static void launchTrailer(Context context, String trailerKey) {
+        Uri youtubeLink = Uri.parse(TRAILER_BASE_URL  + trailerKey);
+        Intent intent = new Intent(Intent.ACTION_VIEW, youtubeLink);
+
+        if (intent.resolveActivity(context.getPackageManager()) != null) {
+            context.startActivity(intent);
+        }
+    }
+
+    // Helper method to set all the Layout params in the LinearLayout trailer_list
+    private static void setTrailerViewProperties(Context context, ImageView trailerView) {
+
+        int width = (int) context.getResources().getInteger(R.integer.trailerWidth);
+        int height = (int) context.getResources().getInteger(R.integer.trailerHeight);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
+
+        params.setMargins(16, 8, 16, 8);
+
+        trailerView.setLayoutParams(params);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    }
+
 
 
 }

@@ -26,5 +26,9 @@
     <dimen name="font_large">20sp</dimen>
     <dimen name="font_description">18sp</dimen>
 
+    <!--Trailer thumbnails-->
+    <integer name="trailerWidth">250</integer>
+    <integer name="trailerHeight">200</integer>
+
 
 </resources>
