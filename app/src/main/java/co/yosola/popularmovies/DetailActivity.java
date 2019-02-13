@@ -190,7 +190,7 @@ public class DetailActivity extends AppCompatActivity {
     // Helper method to know if the results of the request are display in a Textview or and ImageView
     private void loadCorrectTrailerUI(){
         if (mTrailerKeys.length == 0){
-            TextView trailerView = createNoTrailersView(this, mTrailerList, 0);
+            TextView trailerView = createNoTrailersView(this, mTrailerList);
         } else {
             for (int i = 0; i < mTrailerKeys.length; i++){
                 final String trailerKey = mTrailerKeys[i];
@@ -202,12 +202,12 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     // Helper method to return the TextView with no Trailers inside the LinearLayout
-    private static TextView createNoTrailersView(Context context, LinearLayout container, int index) {
+    private static TextView createNoTrailersView(Context context, LinearLayout container) {
         TextView trailerView = new TextView(context);
         trailerView.setText(R.string.no_trailers);
         trailerView.setPadding(0, 0, 0, 50);
         trailerView.setTextSize(15);
-        container.addView(trailerView, index);
+        container.addView(trailerView);
 
         return trailerView;
     }
@@ -309,14 +309,22 @@ public class DetailActivity extends AppCompatActivity {
             TextView reviewView = createNoReviewsView(this, mReviewList);
         } else{
             if (mReviewContent.length == 1) {
-                findViewById(R.id.next_review_button).setVisibility(View.GONE);
+                mNextReview = findViewById(R.id.next_review_button);
+                mNextReview.setVisibility(View.GONE);
 
             }
             String authorLabel = getResources().getString(R.string.author_review_label);
-            String authorHeader = authorLabel + " " +  mReviewAuthors[reviewCounter];
-            ((TextView) findViewById(R.id.author_text)).setText(authorHeader);
-            ((TextView) findViewById(R.id.content_text)).setText(mReviewContent[reviewCounter]);
-            findViewById(R.id.next_review_button).setOnClickListener(new View.OnClickListener() {
+            String authorText = mReviewAuthors[reviewCounter];
+            String authorHeader = authorLabel + " " +  authorText;
+            mAuthorReview = findViewById(R.id.author_text);
+            mAuthorReview.setText(authorHeader);
+
+            String contentText = mReviewContent[reviewCounter];
+            mContentReview = findViewById(R.id.content_text);
+            mContentReview.setText(contentText);
+
+            mNextReview = findViewById(R.id.next_review_button);
+            mNextReview.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (reviewCounter < mReviewContent.length - 1) { reviewCounter++; }
