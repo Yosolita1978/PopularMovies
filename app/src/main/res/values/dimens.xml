@@ -18,6 +18,7 @@
     <dimen name="dimen_50dp">50dp</dimen>
     <dimen name="dimen_55dp">55dp</dimen>
     <dimen name="dimen_80dp">80dp</dimen>
+    <dimen name="dimen_90dp">90dp</dimen>
     <dimen name="dimen_64dp">64dp</dimen>
 
     <!-- Font Sizes -->

@@ -30,11 +30,6 @@
                 android:value=".MainActivity" />
         </activity>
 
-        <provider
-            android:name=".FavoritesProvider"
-            android:authorities="co.yosola.popularmovies"
-            android:exported="false" />
-
     </application>
 
 </manifest>

@@ -1,11 +1,16 @@
 package co.yosola.popularmovies;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -14,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -42,6 +48,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mMovieRelease;
     private TextView mMovieVote;
     private TextView mMoviesynopsis;
+    private Movie mCurrentMovie;
 
     //Variables to the Trailer object
     private LinearLayout mTrailerList;
@@ -56,6 +63,8 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mContentReview;
     private Button mNextReview;
 
+    private MovieDbHelper mDbHelper;
+    private FloatingActionButton mFab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,9 +78,14 @@ public class DetailActivity extends AppCompatActivity {
 
         reviewCounter = 0;
 
+        // To access our database, we instantiate our subclass of SQLiteOpenHelper
+        mDbHelper = new MovieDbHelper(this);
+
         getIncomingIntent();
+
         new FetchTrailersTask().execute();
         new FetchReviewsTask().execute();
+
 
     }
 
@@ -117,7 +131,6 @@ public class DetailActivity extends AppCompatActivity {
             newMovie.setMoviePosterPath(moviePoster_temp);
             newMovie.setMovieVoteAverage(movieVote_temp);
             newMovie.setMovieVoteSynopsis(movieSynopsis_temp);
-
             setUI(newMovie);
 
         } else {
@@ -130,6 +143,8 @@ public class DetailActivity extends AppCompatActivity {
 
     private void setUI(Movie movie) {
         //Log.d(TAG, "setUI: setting the UI with the current Movie.");
+
+        mCurrentMovie = movie;
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
         mMovieTitle.setText(movie.getmMovieTitle());
@@ -149,6 +164,20 @@ public class DetailActivity extends AppCompatActivity {
         mMoviesynopsis = findViewById(R.id.movie_synopsis_detail);
         mMoviesynopsis.setText(movie.getmMovieSynopsis());
 
+        // Setup FAB to open EditorActivity
+        mFab = (FloatingActionButton) findViewById(R.id.fab);
+
+        if(isTheMovieInFavorites()){
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+            mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_black_24dp));
+        } else{
+            mFab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    insertFavoriteMovie();
+                }
+            });
+        }
     }
 
     public class FetchTrailersTask extends AsyncTask<String, Void, String> {
@@ -358,5 +387,66 @@ public class DetailActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * Temporary helper method to search is the movie is in the db or not
+     */
+    private boolean isTheMovieInFavorites(){
+
+        // Create and/or open a database to read from it
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        String selection = MovieContract.MoviesEntry.COLUMN_MOVIE_ID + " = ?";
+        String[] selectionArgs = {String.valueOf(mCurrentMovie.getMovieID())};
+
+        Cursor cursor = db.query(
+                MovieContract.MoviesEntry.TABLE_NAME,
+                null,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null
+        );
+
+        if(cursor.getCount() == 0){
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Helper method to insert data into the database.
+     */
+    private void insertFavoriteMovie() {
+
+        // Gets the database in write mode
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        // Create a ContentValues object where column names are the keys,
+
+        ContentValues mValues = new ContentValues();
+        mValues.put(MovieContract.MoviesEntry.COLUMN_MOVIE_ID, mCurrentMovie.getMovieID());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_TITLE, mCurrentMovie.getmMovieTitle());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_POSTER, mCurrentMovie.getmMoviePosterPath());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_SYNOPSIS, mCurrentMovie.getmMovieSynopsis());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING, mCurrentMovie.getmMovieVoteAverage());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE, mCurrentMovie.getmMovieReleaseDate());
+
+        // Insert a new row for Toto in the database, returning the ID of that new row.
+
+        long newRowId = db.insert(MovieContract.MoviesEntry.TABLE_NAME, null, mValues);
+
+        if (newRowId == -1){
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+            Toast.makeText(DetailActivity.this,
+                    "There was an error with the db", Toast.LENGTH_SHORT).show();
+
+        } else{
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+            mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_black_24dp));
+            Toast.makeText(DetailActivity.this,
+                    "Saved to Favorites!", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 }

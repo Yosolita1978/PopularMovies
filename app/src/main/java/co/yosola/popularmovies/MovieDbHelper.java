@@ -6,35 +6,34 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class MovieDbHelper extends SQLiteOpenHelper {
 
-    // For debugging process
-    public static final String LOG_TAG = MovieDbHelper.class.getSimpleName();
-
-    public static final String DATABASE_FILE_NAME = "favorites.db";
-    public static final int VERSION_NUMBER = 1;
+    public static final String DATABASE_NAME = "favorites.db";
+    private static final int DATABASE_VERSION = 1;
 
     public MovieDbHelper(Context context) {
-        super(context, DATABASE_FILE_NAME, null, VERSION_NUMBER);
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         final String SQL_CREATE_FAVORITES_TABLE =
-                "CREATE TABLE " + MovieContract.FavoritesEntry.TABLE_NAME
+                "CREATE TABLE " + MovieContract.MoviesEntry.TABLE_NAME
                         + " ("
-                        + MovieContract.FavoritesEntry.COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                        + MovieContract.FavoritesEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULL, "
-                        + MovieContract.FavoritesEntry.COLUMN_TITLE + " TEXT NOT NULL, "
-                        + MovieContract.FavoritesEntry.COLUMN_DESCRIPTION + " TEXT, "
-                        + MovieContract.FavoritesEntry.COLUMN_POSTER + " TEXT, "
-                        + MovieContract.FavoritesEntry.COLUMN_RATING + " REAL, "
-                        + MovieContract.FavoritesEntry.COLUMN_RELEASE_DATE + " TEXT);";
+                        + MovieContract.MoviesEntry.COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + MovieContract.MoviesEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULL, "
+                        + MovieContract.MoviesEntry.COLUMN_TITLE + " TEXT NOT NULL, "
+                        + MovieContract.MoviesEntry.COLUMN_SYNOPSIS + " TEXT, "
+                        + MovieContract.MoviesEntry.COLUMN_POSTER + " TEXT, "
+                        + MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING + " REAL, "
+                        + MovieContract.MoviesEntry.COLUMN_RELEASE_DATE + " TEXT);";
+
         db.execSQL(SQL_CREATE_FAVORITES_TABLE);
+
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " +
-                MovieContract.FavoritesEntry.TABLE_NAME);
-        onCreate(sqLiteDatabase);
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " + MovieContract.MoviesEntry.TABLE_NAME);
+        onCreate(db);
     }
 }
