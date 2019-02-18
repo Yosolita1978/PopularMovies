@@ -45,5 +45,17 @@
     <string name="content_reviews">Comment excerpt. Long placeholder location that should wrap to more than 2 lines of text</string>
     <string name="next_reviews">Next</string>
 
+    <!-- Toast message in editor when new movie has failed to be inserted  -->
+    <string name="editor_insert_failed">Error with saving movie to Favorites</string>
+
+    <!-- Toast message in editor when new movie has be inserted  -->
+    <string name="editor_insert_ok">Saving movie to Favorites</string>
+
+    <!-- Toast message when movie has failed to be deleted  -->
+    <string name="editor_delete_failed">Error with deleting movie to Favorites</string>
+
+    <!-- Toast message when movie has been deleted  -->
+    <string name="editor_delete_ok">Delete movie from Favorites</string>
+
 
 </resources>

@@ -18,6 +18,7 @@ public final class MovieContract {
     }
 
     public static final class MoviesEntry implements BaseColumns {
+
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon()
                 .appendPath(PATH_MOVIES)
                 .build();

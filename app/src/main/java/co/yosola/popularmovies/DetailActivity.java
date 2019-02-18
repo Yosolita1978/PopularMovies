@@ -141,10 +141,11 @@ public class DetailActivity extends AppCompatActivity {
 
     }
 
-    private void setUI(Movie movie) {
+    private void setUI(final Movie movie) {
         //Log.d(TAG, "setUI: setting the UI with the current Movie.");
 
         mCurrentMovie = movie;
+        final String mMovieID = String.valueOf(mCurrentMovie.getMovieID());
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
         mMovieTitle.setText(movie.getmMovieTitle());
@@ -167,17 +168,22 @@ public class DetailActivity extends AppCompatActivity {
         // Setup FAB to open EditorActivity
         mFab = (FloatingActionButton) findViewById(R.id.fab);
 
-        if(isTheMovieInFavorites()){
+        if(isTheMovieInFavorites(mMovieID))
+        {
             mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
             mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_black_24dp));
-        } else{
-            mFab.setOnClickListener(new View.OnClickListener() {
+        }
+
+        mFab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    insertFavoriteMovie();
+                    if(isTheMovieInFavorites(mMovieID)){
+                        deleteMovie(mMovieID);
+                    }else{
+                        insertFavoriteMovie(movie);
+                    }
                 }
             });
-        }
     }
 
     public class FetchTrailersTask extends AsyncTask<String, Void, String> {
@@ -390,63 +396,82 @@ public class DetailActivity extends AppCompatActivity {
     /**
      * Temporary helper method to search is the movie is in the db or not
      */
-    private boolean isTheMovieInFavorites(){
+    private boolean isTheMovieInFavorites(String id){
 
-        // Create and/or open a database to read from it
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        Uri uri = MovieContract.MoviesEntry.CONTENT_URI;
+        Cursor cursor = getContentResolver()
+                .query(uri, null, null, null, null);
+        if (cursor != null && cursor.getCount() > 0) {
 
-        String selection = MovieContract.MoviesEntry.COLUMN_MOVIE_ID + " = ?";
-        String[] selectionArgs = {String.valueOf(mCurrentMovie.getMovieID())};
-
-        Cursor cursor = db.query(
-                MovieContract.MoviesEntry.TABLE_NAME,
-                null,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null
-        );
-
-        if(cursor.getCount() == 0){
-            return false;
+            while (!cursor.moveToNext()) {
+                int columnId = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIE_ID);
+                String movieId = cursor.getString(columnId);
+                Log.d(TAG, "cursor movieID:" + movieId + "  id" + id);
+                if (id.equals(movieId)) {
+                    return true;
+                }
+            }
+            cursor.close();
         }
-        return true;
+        return false;
     }
 
     /**
      * Helper method to insert data into the database.
      */
-    private void insertFavoriteMovie() {
-
-        // Gets the database in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+    private void insertFavoriteMovie(Movie movie) {
 
         // Create a ContentValues object where column names are the keys,
 
         ContentValues mValues = new ContentValues();
-        mValues.put(MovieContract.MoviesEntry.COLUMN_MOVIE_ID, mCurrentMovie.getMovieID());
-        mValues.put(MovieContract.MoviesEntry.COLUMN_TITLE, mCurrentMovie.getmMovieTitle());
-        mValues.put(MovieContract.MoviesEntry.COLUMN_POSTER, mCurrentMovie.getmMoviePosterPath());
-        mValues.put(MovieContract.MoviesEntry.COLUMN_SYNOPSIS, mCurrentMovie.getmMovieSynopsis());
-        mValues.put(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING, mCurrentMovie.getmMovieVoteAverage());
-        mValues.put(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE, mCurrentMovie.getmMovieReleaseDate());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_MOVIE_ID, movie.getMovieID());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_TITLE, movie.getmMovieTitle());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_POSTER, movie.getmMoviePosterPath());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_SYNOPSIS, movie.getmMovieSynopsis());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING, movie.getmMovieVoteAverage());
+        mValues.put(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE, movie.getmMovieReleaseDate());
 
-        // Insert a new row for Toto in the database, returning the ID of that new row.
+        // returning the ID of that new row.
 
-        long newRowId = db.insert(MovieContract.MoviesEntry.TABLE_NAME, null, mValues);
+        Uri newUri = getContentResolver().insert(MovieContract.MoviesEntry.CONTENT_URI, mValues);
 
-        if (newRowId == -1){
+        if (newUri == null){
             mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-            Toast.makeText(DetailActivity.this,
-                    "There was an error with the db", Toast.LENGTH_SHORT).show();
+            Toast.makeText(DetailActivity.this, getString(R.string.editor_insert_failed), Toast.LENGTH_SHORT).show();
 
         } else{
+            String tempid = newUri.getLastPathSegment();
+            Log.d(TAG, "temp movieID:" + tempid );
             mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
             mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_black_24dp));
             Toast.makeText(DetailActivity.this,
-                    "Saved to Favorites!", Toast.LENGTH_SHORT).show();
+                    getString(R.string.editor_insert_ok), Toast.LENGTH_SHORT).show();
         }
     }
+
+
+    /**
+     * Perform the deletion of a favorite.
+     */
+    private void deleteMovie(String movieId) {
+
+        String WHERE_PARAM = MovieContract.MoviesEntry.COLUMN_MOVIE_ID + " = " + movieId;
+        int rowsDeleted = getContentResolver().delete(MovieContract.MoviesEntry.CONTENT_URI,
+                WHERE_PARAM, null);
+
+            // Show a toast message depending on whether or not the delete was successful.
+            if (rowsDeleted == 0) {
+                // If no rows were deleted, then there was an error with the delete.
+                Toast.makeText(this, getString(R.string.editor_delete_failed),
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the delete was successful and we can display a toast.
+                Toast.makeText(this, getString(R.string.editor_delete_ok),
+                        Toast.LENGTH_SHORT).show();
+                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+                mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_white_24dp));
+            }
+        }
+
 
 }

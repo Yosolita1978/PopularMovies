@@ -29,6 +29,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+        <provider
+            android:name=".FavoritesProvider"
+            android:authorities="co.yosola.popularmovies"
+            android:exported="false" />
 
     </application>
 
