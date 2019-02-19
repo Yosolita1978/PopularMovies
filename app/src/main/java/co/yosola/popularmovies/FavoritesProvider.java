@@ -10,6 +10,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 public class FavoritesProvider extends ContentProvider {
 
@@ -20,21 +21,17 @@ public class FavoritesProvider extends ContentProvider {
 
     private static final int FAVORITE_ID = 101;
 
-    public static final Uri MOVIES_URI = Uri.parse(MovieContract.BASE_CONTENT_URI + "/" + MovieContract.MoviesEntry.TABLE_NAME);
-
-    public static final Uri MOVIES_URI_ID = Uri.parse(MovieContract.BASE_CONTENT_URI + "/" + MovieContract.MoviesEntry.TABLE_NAME + "/" + FAVORITE_ID);
-
     private MovieDbHelper mDbHelper;
 
-    private static final UriMatcher mUriMatcher = buildUriMatcher();
+    private static final UriMatcher mUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
-    private static UriMatcher buildUriMatcher(){
-        final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
+    static{
 
-        matcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.MoviesEntry.TABLE_NAME, FAVORITES);
-        matcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.MoviesEntry.TABLE_NAME + "/#", FAVORITE_ID);
+        mUriMatcher.addURI(
+                MovieContract.CONTENT_AUTHORITY,MovieContract.PATH_MOVIES,FAVORITES);
 
-        return matcher;
+        mUriMatcher.addURI(
+                MovieContract.CONTENT_AUTHORITY,MovieContract.PATH_MOVIES + "/#",FAVORITE_ID);
     }
 
 
@@ -50,33 +47,60 @@ public class FavoritesProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
                         String sortOrder) {
 
-        final SQLiteDatabase db = mDbHelper.getReadableDatabase();
-        Cursor cursor = null;
+        final SQLiteDatabase database = mDbHelper.getReadableDatabase();
 
-        switch (mUriMatcher.match(uri)){
+        Cursor cursor;
+
+        int match = mUriMatcher.match(uri);
+        switch (match) {
             case FAVORITES:
-                cursor = db.query(MovieContract.MoviesEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor=database.query(MovieContract.MoviesEntry.TABLE_NAME, projection, selection, selectionArgs,null,null,sortOrder);
                 break;
+            default:
+                throw new IllegalArgumentException("Cannot query unknown URI " + uri);
         }
+
+        cursor.setNotificationUri(getContext().getContentResolver(),uri);
+
         return cursor;
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues contentValues) {
-        final SQLiteDatabase database = mDbHelper.getWritableDatabase();
-        switch (mUriMatcher.match(uri)) {
+        final int match = mUriMatcher.match(uri);
+        switch (match) {
             case FAVORITES:
-                long movieId = database.insert(MovieContract.MoviesEntry.TABLE_NAME, null, contentValues);
-                if (movieId > 0) {
-                    Uri result = ContentUris.withAppendedId(uri, movieId);
-                    getContext().getContentResolver().notifyChange(result, null);
-                }
-                break;
+                return insertMovie(uri, contentValues);
             default:
-                throw new SQLException("Failed to insert row" + uri);
+                throw new IllegalArgumentException("Insertion is not supported for " + uri);
         }
-        return uri;
 
+    }
+
+
+    private Uri insertMovie(Uri uri, ContentValues values) {
+
+        String movieId = values.getAsString(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
+
+        if (movieId == null) {
+            throw new IllegalArgumentException("Movie requires valid id");
+        }
+
+        //If everything is correct, we proceed to write into the database
+        final SQLiteDatabase database = mDbHelper.getWritableDatabase();
+
+        long newRowId = database.insert(MovieContract.MoviesEntry.TABLE_NAME,null,values);
+
+        if (newRowId != -1){
+            Log.d(LOG_TAG, getContext().getResources().getString(R.string.log_insert_ok));
+        }
+        else{
+            Log.d(LOG_TAG, getContext().getResources().getString(R.string.log_insert_failed));
+        }
+
+        getContext().getContentResolver().notifyChange(uri,null);
+
+        return ContentUris.withAppendedId(uri, newRowId);
     }
 
 
@@ -86,10 +110,6 @@ public class FavoritesProvider extends ContentProvider {
         final SQLiteDatabase db = mDbHelper.getWritableDatabase();
         switch (mUriMatcher.match(uri)){
             case FAVORITES:
-                count = db.delete(MovieContract.MoviesEntry.TABLE_NAME, selection, selectionArgs);
-                break;
-
-            case FAVORITE_ID:
                 count = db.delete(MovieContract.MoviesEntry.TABLE_NAME, selection, selectionArgs);
                 break;
         }

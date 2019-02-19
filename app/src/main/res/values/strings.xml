@@ -22,6 +22,7 @@
     <!-- For Main Movie Activity menu options -->
     <string name="popular_movies">Popular Movies</string>
     <string name="top_rated_movies">Top Rated Movies</string>
+    <string name="favorites_movies">Favorites</string>
 
     <string name="menu_item">Order By</string>
 
@@ -56,6 +57,17 @@
 
     <!-- Toast message when movie has been deleted  -->
     <string name="editor_delete_ok">Delete movie from Favorites</string>
+
+    <!-- Log message when movie has been added  -->
+    <string name="log_insert_ok">The movie was added successfully</string>
+
+    <!-- Log message when movie has failed to be added  -->
+    <string name="log_insert_failed">The movie couldn\'t be added as favorite</string>
+
+    <!-- Toast message when movie has been deleted  -->
+    <string name="log_delete_ok">Delete movie from Favorites</string>
+
+    <string name="no_favorites">You have no saved favorites.</string>
 
 
 </resources>

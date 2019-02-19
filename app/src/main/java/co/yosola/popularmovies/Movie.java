@@ -29,7 +29,6 @@ public class Movie {
         mMovieReleaseDate = movieReleaseDate;
         mMovieSynopsis = movieSynopsis;
         mMoviePosterPath = IMAGE_BASE_URL + moviePosterPath;
-        ;
         mMovieVoteAverage = movieVoteAverage;
     }
 
