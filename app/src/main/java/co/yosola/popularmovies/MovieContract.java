@@ -33,7 +33,6 @@ public final class MovieContract {
         public static final String COLUMN_AVERAGE_RATING = "average_rating";
         public static final String COLUMN_RELEASE_DATE = "release_date";
 
-
     }
 
 }

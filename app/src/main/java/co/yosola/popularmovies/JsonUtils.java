@@ -54,7 +54,7 @@ public class JsonUtils {
                 String voteString = String.valueOf(userRating);
 
                 mMoviesList.add(new Movie(movieID, title, releaseDate, synopsis, posterSrc, voteString));
-                Log.d(TAG, movieID + "");
+                //Log.d(TAG, movieID + "");
             }
 
 

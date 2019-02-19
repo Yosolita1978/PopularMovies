@@ -8,7 +8,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -18,7 +18,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.URL;
@@ -44,6 +43,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private MovieAdapter mMovieAdapter;
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
+
+    private static final String BUNDLE_RECYCLER_LAYOUT = "classname.recycler.layout";
+    private Parcelable mSavedRecyclerLayoutState;
 
 
     @Override
@@ -77,18 +79,18 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
 
         //check for network connection
-        if(!isNetworkAvailable()){
+        if (!isNetworkAvailable()) {
             showErrorMessage();
             mErrorMessageDisplay.setText(R.string.error_message_internet);
         }
 
-        if (savedInstanceState != null){
-                sortOrder = savedInstanceState.getString(STATE_QUERY);
-                titleBySort = savedInstanceState.getString(STATE_TITLE);
-                setTitle(titleBySort);
-                //build the url string
-                startMovieSearch(sortOrder);
-        } else{
+        if (savedInstanceState != null) {
+            sortOrder = savedInstanceState.getString(STATE_QUERY);
+            titleBySort = savedInstanceState.getString(STATE_TITLE);
+            setTitle(titleBySort);
+            //build the url string
+            startMovieSearch(sortOrder);
+        } else {
             //set the tittle of the app - default to 'popular movies'
             setTitle(titleBySort);
 
@@ -148,7 +150,19 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         String lastTitleSaved = titleBySort;
         outState.putString(STATE_QUERY, lastQuerySaved);
         outState.putString(STATE_TITLE, lastTitleSaved);
+        outState.putParcelable(BUNDLE_RECYCLER_LAYOUT, mRecyclerView.getLayoutManager().onSaveInstanceState());
 
+    }
+
+    @Override
+    public void onRestoreInstanceState(@Nullable Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        if(savedInstanceState != null)
+        {
+            mSavedRecyclerLayoutState = savedInstanceState.getParcelable(BUNDLE_RECYCLER_LAYOUT);
+            mRecyclerView.getLayoutManager().onRestoreInstanceState(mSavedRecyclerLayoutState);
+        }
     }
 
     @Override
@@ -156,12 +170,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
         //Toast.makeText(this.getBaseContext(), "Movie: " + String.valueOf(movie.getMovieID()), Toast.LENGTH_LONG).show();
         Intent intent = new Intent(MainActivity.this, DetailActivity.class);
-        intent.putExtra("movie_id", movie.getMovieID());
-        intent.putExtra("movie_title", movie.getmMovieTitle());
-        intent.putExtra("movie_release", movie.getmMovieReleaseDate());
-        intent.putExtra("movie_poster_url", movie.getmMoviePosterPath());
-        intent.putExtra("movie_vote", movie.getmMovieVoteAverage());
-        intent.putExtra("movie_synopsis", movie.getmMovieSynopsis());
+        intent.putExtra("Movie", movie);
         startActivity(intent);
     }
 
@@ -198,6 +207,48 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         return super.onOptionsItemSelected(menuItem);
     }
 
+    private void loadFavorites() {
+        Uri uri = MovieContract.MoviesEntry.CONTENT_URI;
+        Cursor cursor = getContentResolver()
+                .query(uri, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) { //If there are existing favorited items
+
+            int resultsLength = cursor.getCount();
+
+            //create an array of movies
+            ArrayList<Movie> favoritesMoviesList = new ArrayList<Movie>(resultsLength);
+
+            //find all the values of the columns in the cursor
+            int columnIDindex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
+            int columTitleIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_TITLE);
+            int columPosterIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_POSTER);
+            int columSyntesIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_SYNOPSIS);
+            int columRatingIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING);
+            int columReleaseDate = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE);
+
+            while (!cursor.isAfterLast()) {
+                Movie newMovieDB = new Movie();
+                newMovieDB.setMovieID(Integer.valueOf(cursor.getInt(columnIDindex)));
+                newMovieDB.setMovieTitle(cursor.getString(columTitleIndex));
+                newMovieDB.setMovieReleaseDate(cursor.getString(columReleaseDate));
+                newMovieDB.setMovieVoteSynopsis(cursor.getString(columSyntesIndex));
+                newMovieDB.setMoviePosterPath(cursor.getString(columPosterIndex));
+                newMovieDB.setMovieVoteAverage(cursor.getString(columRatingIndex));
+                favoritesMoviesList.add(newMovieDB);
+
+                cursor.moveToNext();
+            }
+            cursor.close();
+            mRecyclerView.removeAllViews();
+            mMovieAdapter.setPosterData(favoritesMoviesList);
+
+        } else { //Create placeholder text if there are no favorited items
+            mRecyclerView.setVisibility(View.GONE);
+            showErrorMessage();
+            mErrorMessageDisplay.setText(R.string.no_favorites);
+        }
+    }
+
     //Async inner class to fetch network data
     class FetchMovieTask extends AsyncTask<URL, Void, String> {
 
@@ -226,52 +277,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             if (jsonData != null && !jsonData.equals("")) {
                 super.onPostExecute(jsonData);
                 showJSONData(jsonData);
+                mRecyclerView.getLayoutManager().onRestoreInstanceState(mSavedRecyclerLayoutState);
             } else {
                 showErrorMessage();
                 mErrorMessageDisplay.setText(R.string.error_message);
             }
-        }
-    }
-
-    private void loadFavorites() {
-        Uri uri = MovieContract.MoviesEntry.CONTENT_URI;
-        Cursor cursor = getContentResolver()
-                .query(uri, null, null, null, null);
-        if (cursor != null && cursor.moveToFirst()) { //If there are existing favorited items
-
-            int resultsLength = cursor.getCount();
-
-            //create an array of movies
-            ArrayList<Movie> favoritesMoviesList = new ArrayList<Movie>(resultsLength);
-
-            //find all the values of the columns in the cursor
-            int columnIDindex  = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
-            int columTitleIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_TITLE);
-            int columPosterIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_POSTER);
-            int columSyntesIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_SYNOPSIS);
-            int columRatingIndex = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING);
-            int columReleaseDate = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE);
-
-            while (!cursor.isAfterLast()) {
-                Movie newMovieDB = new Movie();
-                newMovieDB.setMovieID(Integer.valueOf(cursor.getInt(columnIDindex)));
-                newMovieDB.setMovieTitle(cursor.getString(columTitleIndex));
-                newMovieDB.setMovieReleaseDate(cursor.getString(columReleaseDate));
-                newMovieDB.setMovieVoteSynopsis(cursor.getString(columSyntesIndex));
-                newMovieDB.setMoviePosterPath(cursor.getString(columPosterIndex));
-                newMovieDB.setMovieVoteAverage(cursor.getString(columRatingIndex));
-                favoritesMoviesList.add(newMovieDB);
-
-                cursor.moveToNext();
-            }
-            cursor.close();
-            mRecyclerView.removeAllViews();
-            mMovieAdapter.setPosterData(favoritesMoviesList);
-
-        } else { //Create placeholder text if there are no favorited items
-            mRecyclerView.setVisibility(View.GONE);
-            showErrorMessage();
-            mErrorMessageDisplay.setText(R.string.no_favorites);
         }
     }
 

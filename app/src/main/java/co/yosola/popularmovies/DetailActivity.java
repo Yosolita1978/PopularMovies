@@ -1,17 +1,13 @@
 package co.yosola.popularmovies;
 
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.UserDictionary;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -28,7 +24,6 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.net.URL;
 
@@ -66,6 +61,63 @@ public class DetailActivity extends AppCompatActivity {
 
     private MovieDbHelper mDbHelper;
     private FloatingActionButton mFab;
+
+    // Helper method to return the TextView with no Trailers inside the LinearLayout
+    private static TextView createNoTrailersView(Context context, LinearLayout container) {
+        TextView trailerView = new TextView(context);
+        trailerView.setText(R.string.no_trailers);
+        trailerView.setPadding(0, 0, 0, 50);
+        trailerView.setTextSize(15);
+        container.addView(trailerView);
+
+        return trailerView;
+    }
+
+    // Helper method to return the ImageView inside the LinearLayout
+    private static ImageView createTrailerView(Context context, LinearLayout container, int index) {
+        ImageView trailerView = new ImageView(context);
+        setTrailerViewProperties(context, trailerView);
+        container.addView(trailerView, index);
+
+        return trailerView;
+    }
+
+    // Helper method to set an OnClickListener for each trailer in the results
+    private static void setTrailerOnClickListener(final Context context, ImageView trailerView, final String trailerKey) {
+        trailerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                launchTrailer(context, trailerKey);
+            }
+        });
+    }
+
+    // Helper method to start the Youtube intent on each trailer in the list
+    private static void launchTrailer(Context context, String trailerKey) {
+        Uri youtubeLink = Uri.parse(TRAILER_BASE_URL + trailerKey);
+        Intent intent = new Intent(Intent.ACTION_VIEW, youtubeLink);
+
+        if (intent.resolveActivity(context.getPackageManager()) != null) {
+            context.startActivity(intent);
+        }
+    }
+
+    // Helper method to set all the Layout params in the LinearLayout trailer_list
+    private static void setTrailerViewProperties(Context context, ImageView trailerView) {
+
+        int width = (int) context.getResources().getInteger(R.integer.trailerWidth);
+        int height = (int) context.getResources().getInteger(R.integer.trailerHeight);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
+
+        params.setMargins(16, 8, 16, 8);
+
+        trailerView.setLayoutParams(params);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,27 +165,20 @@ public class DetailActivity extends AppCompatActivity {
         //Log.d(TAG, "getIncomingIntent: checking for incoming intents.");
 
         Intent intent = getIntent();
-        Bundle extras = intent.getExtras();
+        Movie detailMovie = intent.getParcelableExtra("Movie");
 
-        int movieID = extras.getInt("movie_id");
+        int movieID = detailMovie.getMovieID();
         mMovieId = String.valueOf(movieID);
-        String movieTitle_temp = extras.getString("movie_title");
-        String movieRelease_temp = extras.getString("movie_release");
-        String moviePoster_temp = extras.getString("movie_poster_url");
-        String movieVote_temp = extras.getString("movie_vote");
-        String movieSynopsis_temp = extras.getString("movie_synopsis");
+        String movieTitle_temp = detailMovie.getmMovieTitle();
+        String movieRelease_temp = detailMovie.getmMovieReleaseDate();
+        String moviePoster_temp = detailMovie.getmMoviePosterPath();
+        String movieVote_temp = detailMovie.getmMovieVoteAverage();
+        String movieSynopsis_temp = detailMovie.getmMovieSynopsis();
 
         if (movieTitle_temp != null && movieRelease_temp != null && moviePoster_temp != null && movieVote_temp != null && movieSynopsis_temp != null) {
             //Log.d(TAG, "getIncomingIntent: " + movieTitle_temp + movieRelease_temp + moviePoster_temp + movieVote_temp + movieSynopsis_temp);
 
-            Movie newMovie = new Movie();
-            newMovie.setMovieID(movieID);
-            newMovie.setMovieTitle(movieTitle_temp);
-            newMovie.setMovieReleaseDate(movieRelease_temp);
-            newMovie.setMoviePosterPath(moviePoster_temp);
-            newMovie.setMovieVoteAverage(movieVote_temp);
-            newMovie.setMovieVoteSynopsis(movieSynopsis_temp);
-            setUI(newMovie);
+            setUI(detailMovie);
 
         } else {
             //Log.d(TAG, "Something went  wrong with the intent");
@@ -172,8 +217,7 @@ public class DetailActivity extends AppCompatActivity {
         mFab = (FloatingActionButton) findViewById(R.id.fab);
 
         //If the movie is already in favorites, change the buttton and show the info
-        if(isTheMovieInFavorites(mMovieID))
-        {
+        if (isTheMovieInFavorites(mMovieID)) {
             //Change the button colors to the version on favorites
             //displayDatabaseInfo();
             mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
@@ -181,36 +225,17 @@ public class DetailActivity extends AppCompatActivity {
         }
 
         mFab.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if(isTheMovieInFavorites(mMovieID)){
-                        deleteFavoriteMovie(movie);
-                        //displayDatabaseInfo();
-                        return;
-                    }else {
-                        insertFavoriteMovie(movie);
-                    }
+            @Override
+            public void onClick(View view) {
+                if (isTheMovieInFavorites(mMovieID)) {
+                    deleteFavoriteMovie(movie);
+                    //displayDatabaseInfo();
+                    return;
+                } else {
+                    insertFavoriteMovie(movie);
                 }
-            });
-    }
-
-    public class FetchTrailersTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                URL trailersRequestUrl = NetworkUtils.buildTrailersUrl(mMovieId);
-                return NetworkUtils.getResponseFromHttpUrl(trailersRequestUrl);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
             }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            extractTrailerData(result);
-            loadCorrectTrailerUI();
-        }
+        });
     }
 
     public void extractTrailerData(String trailersResponse) {
@@ -231,37 +256,17 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     // Helper method to know if the results of the request are display in a Textview or and ImageView
-    private void loadCorrectTrailerUI(){
-        if (mTrailerKeys.length == 0){
+    private void loadCorrectTrailerUI() {
+        if (mTrailerKeys.length == 0) {
             TextView trailerView = createNoTrailersView(this, mTrailerList);
         } else {
-            for (int i = 0; i < mTrailerKeys.length; i++){
+            for (int i = 0; i < mTrailerKeys.length; i++) {
                 final String trailerKey = mTrailerKeys[i];
                 ImageView trailerView = createTrailerView(this, mTrailerList, i);
                 loadMovieTrailerThumbnail(trailerView, trailerKey);
                 setTrailerOnClickListener(this, trailerView, trailerKey);
             }
         }
-    }
-
-    // Helper method to return the TextView with no Trailers inside the LinearLayout
-    private static TextView createNoTrailersView(Context context, LinearLayout container) {
-        TextView trailerView = new TextView(context);
-        trailerView.setText(R.string.no_trailers);
-        trailerView.setPadding(0, 0, 0, 50);
-        trailerView.setTextSize(15);
-        container.addView(trailerView);
-
-        return trailerView;
-    }
-
-    // Helper method to return the ImageView inside the LinearLayout
-    private static ImageView createTrailerView(Context context, LinearLayout container, int index) {
-        ImageView trailerView = new ImageView(context);
-        setTrailerViewProperties(context, trailerView);
-        container.addView(trailerView, index);
-
-        return trailerView;
     }
 
     // Helper method to set the image in the ImageView using Picasso
@@ -275,70 +280,13 @@ public class DetailActivity extends AppCompatActivity {
                 .into(trailerView);
     }
 
-    // Helper method to set an OnClickListener for each trailer in the results
-    private static void setTrailerOnClickListener(final Context context, ImageView trailerView, final String trailerKey) {
-        trailerView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                launchTrailer(context, trailerKey);
-            }
-        });
-    }
-
-    // Helper method to start the Youtube intent on each trailer in the list
-    private static void launchTrailer(Context context, String trailerKey) {
-        Uri youtubeLink = Uri.parse(TRAILER_BASE_URL  + trailerKey);
-        Intent intent = new Intent(Intent.ACTION_VIEW, youtubeLink);
-
-        if (intent.resolveActivity(context.getPackageManager()) != null) {
-            context.startActivity(intent);
-        }
-    }
-
-    // Helper method to set all the Layout params in the LinearLayout trailer_list
-    private static void setTrailerViewProperties(Context context, ImageView trailerView) {
-
-        int width = (int) context.getResources().getInteger(R.integer.trailerWidth);
-        int height = (int) context.getResources().getInteger(R.integer.trailerHeight);
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
-
-        params.setMargins(16, 8, 16, 8);
-
-        trailerView.setLayoutParams(params);
-
-        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    }
-
-    public class FetchReviewsTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                URL reviewsRequestUrl = NetworkUtils.buildReviewsUrl(mMovieId);
-                return NetworkUtils.getResponseFromHttpUrl(reviewsRequestUrl);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            extractReviews(result);
-            loadCorrectReviewUI();
-        }
-    }
-
     public void extractReviews(String reviewsResponse) {
         try {
             JSONObject jsonReviewsObject = new JSONObject(reviewsResponse);
             JSONArray reviewsResults = jsonReviewsObject.getJSONArray("results");
             mReviewAuthors = new String[reviewsResults.length()];
             mReviewContent = new String[reviewsResults.length()];
-            for (int i = 0; i < reviewsResults.length(); i++)
-            {
+            for (int i = 0; i < reviewsResults.length(); i++) {
                 mReviewAuthors[i] = reviewsResults.getJSONObject(i).optString("author");
                 mReviewContent[i] = reviewsResults.getJSONObject(i).optString("content");
             }
@@ -347,10 +295,10 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
-    public void loadCorrectReviewUI(){
-        if (mReviewContent.length == 0){
+    public void loadCorrectReviewUI() {
+        if (mReviewContent.length == 0) {
             TextView reviewView = createNoReviewsView(this, mReviewList);
-        } else{
+        } else {
             if (mReviewContent.length == 1) {
                 mNextReview = findViewById(R.id.next_review_button);
                 mNextReview.setVisibility(View.GONE);
@@ -358,7 +306,7 @@ public class DetailActivity extends AppCompatActivity {
             }
             String authorLabel = getResources().getString(R.string.author_review_label);
             String authorText = mReviewAuthors[reviewCounter];
-            String authorHeader = authorLabel + " " +  authorText;
+            String authorHeader = authorLabel + " " + authorText;
             mAuthorReview = findViewById(R.id.author_text);
             mAuthorReview.setText(authorHeader);
 
@@ -370,8 +318,11 @@ public class DetailActivity extends AppCompatActivity {
             mNextReview.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (reviewCounter < mReviewContent.length - 1) { reviewCounter++; }
-                    else { reviewCounter = 0; }
+                    if (reviewCounter < mReviewContent.length - 1) {
+                        reviewCounter++;
+                    } else {
+                        reviewCounter = 0;
+                    }
                     loadCorrectReviewUI();
                 }
             });
@@ -400,14 +351,13 @@ public class DetailActivity extends AppCompatActivity {
         return reviewView;
     }
 
-
     /**
-     * Temporary helper method to search is the movie is in the db or not
+     * Helper method to search is the movie is in the db or not
      */
-    public boolean isTheMovieInFavorites(String id){
+    public boolean isTheMovieInFavorites(String id) {
 
         Cursor cursor = getContentResolver().query(MovieContract.MoviesEntry.CONTENT_URI, null, null, null, null);
-        if (cursor.getCount()> 0) {
+        if (cursor.getCount() > 0) {
 
             int columnId = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
 
@@ -428,7 +378,7 @@ public class DetailActivity extends AppCompatActivity {
      */
     private void insertFavoriteMovie(Movie movie) {
 
-        if(!isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
+        if (!isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
 
             // Create a ContentValues object where column names are the keys,
 
@@ -457,18 +407,17 @@ public class DetailActivity extends AppCompatActivity {
                 Toast.makeText(DetailActivity.this,
                         getString(R.string.editor_insert_ok), Toast.LENGTH_SHORT).show();
             }
-        } else{
+        } else {
             Log.d(TAG, "Movie already in db");
         }
     }
-
 
     /**
      * Helper method to delete data into the database.
      */
     private void deleteFavoriteMovie(Movie movie) {
 
-        if(isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
+        if (isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
 
             // Create a ContentValues object where column names are the keys,
             String selectionClause = MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID + " = ?";
@@ -487,40 +436,77 @@ public class DetailActivity extends AppCompatActivity {
                 Toast.makeText(DetailActivity.this,
                         getString(R.string.editor_delete_ok), Toast.LENGTH_SHORT).show();
             }
-        } else{
+        } else {
             Log.d(TAG, "Movie is not in favorites");
         }
     }
 
+//    /**
+//     * Temporary helper method to display information in the onscreen
+//     */
+//    private void displayDatabaseInfo() {
+//
+//        Cursor mCursor = getContentResolver().query(MovieContract.MoviesEntry.CONTENT_URI, null, null, null, null);
+//
+//        if (mCursor.getCount() > 0) {
+//
+//            TextView displayView = (TextView) findViewById(R.id.trailers_title);
+//
+//            try {
+//
+//                displayView.setText("The table contains " + mCursor.getCount());
+//
+//                int idColumnIndex = mCursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
+//                while (mCursor.moveToNext()) {
+//                    String wantedId = mCursor.getString(idColumnIndex);
+//
+//                    displayView.append(("\n" + wantedId + "\n\n"));
+//
+//                }
+//
+//            } finally {
+//                // Always close the cursor when you're done reading from it. This releases all its
+//                // resources and makes it invalid.
+//                mCursor.close();
+//            }
+//        }
+//    }
 
-    /**
-     * Temporary helper method to display information in the onscreen
-     */
-    private void displayDatabaseInfo() {
-
-        Cursor mCursor = getContentResolver().query(MovieContract.MoviesEntry.CONTENT_URI, null, null, null, null);
-
-        if(mCursor.getCount() > 0) {
-
-            TextView displayView = (TextView) findViewById(R.id.trailers_title);
-
+    public class FetchTrailersTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... strings) {
             try {
-
-                displayView.setText("The table contains " + mCursor.getCount());
-
-                int idColumnIndex = mCursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
-                while (mCursor.moveToNext()){
-                    String wantedId = mCursor.getString(idColumnIndex);
-
-                    displayView.append(("\n" + wantedId + "\n\n"));
-
-                }
-
-            } finally {
-                // Always close the cursor when you're done reading from it. This releases all its
-                // resources and makes it invalid.
-                mCursor.close();
+                URL trailersRequestUrl = NetworkUtils.buildTrailersUrl(mMovieId);
+                return NetworkUtils.getResponseFromHttpUrl(trailersRequestUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
             }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            extractTrailerData(result);
+            loadCorrectTrailerUI();
+        }
+    }
+
+    public class FetchReviewsTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                URL reviewsRequestUrl = NetworkUtils.buildReviewsUrl(mMovieId);
+                return NetworkUtils.getResponseFromHttpUrl(reviewsRequestUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            extractReviews(result);
+            loadCorrectReviewUI();
         }
     }
 

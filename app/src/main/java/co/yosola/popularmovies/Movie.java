@@ -1,9 +1,13 @@
 package co.yosola.popularmovies;
 
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Property;
+
 import java.util.ArrayList;
 
-public class Movie {
+public class Movie implements Parcelable {
 
     private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w185";
     private String mMovieTitle;
@@ -31,6 +35,45 @@ public class Movie {
         mMoviePosterPath = IMAGE_BASE_URL + moviePosterPath;
         mMovieVoteAverage = movieVoteAverage;
     }
+
+    //constructor used for parcel
+    private Movie(Parcel in) {
+        mMovieID = in.readInt();
+        mMovieTitle = in.readString();
+        mMovieSynopsis = in.readString();
+        mMovieVoteAverage = in.readString();
+        mMovieReleaseDate = in.readString();
+        mMoviePosterPath = in.readString();
+    }
+
+    @Override
+    public int describeContents() {
+        return hashCode();
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeInt(mMovieID);
+        out.writeString(mMovieTitle);
+        out.writeString(mMovieSynopsis);
+        out.writeString(mMovieVoteAverage);
+        out.writeString(mMovieReleaseDate);
+        out.writeString(mMoviePosterPath);
+    }
+
+    //used when un-parceling our parcel (creating the object)
+    public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>(){
+
+        @Override
+        public Movie createFromParcel(Parcel parcel) {
+            return new Movie(parcel);
+        }
+
+        @Override
+        public Movie[] newArray(int size) {
+            return new Movie[0];
+        }
+    };
 
 
     public String getmMovieTitle() {
@@ -80,4 +123,6 @@ public class Movie {
     public void setMovieID(int mMovieID) {
         this.mMovieID = mMovieID;
     }
+
+
 }
