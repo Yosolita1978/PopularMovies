@@ -18,10 +18,10 @@ public interface FavoritesDao {
     @Query("SELECT * FROM favorites WHERE id = :id")
     Favorites getItemById(int id);
 
-    @Query("SELECT * FROM favorites WHERE movie_id = :movieid")
+    @Query("SELECT * FROM favorites WHERE movieIMBD_id = :movieid")
     Favorites getItemByMovieId(String movieid);
 
-    @Query("SELECT * FROM Favorites WHERE movie_title LIKE :title")
+    @Query("SELECT * FROM Favorites WHERE title LIKE :title")
     Favorites getMovieByTitle(String title);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -12,22 +12,22 @@ public class Favorites {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    @ColumnInfo(name = "movie_id")
+
     private String movieIMBD_id;
 
-    @ColumnInfo(name = "movie_title")
+
     private String title;
 
-    @ColumnInfo(name = "movie_release_date")
+
     private String releaseDate;
 
-    @ColumnInfo(name = "movie_poster_url")
+
     private String posterUrl;
 
-    @ColumnInfo(name = "movie_rating")
+
     private String averageRating;
 
-    @ColumnInfo(name = "movie_synopsis")
+
     private String synopsis;
 
     public Favorites(){}
@@ -43,60 +43,59 @@ public class Favorites {
         this.synopsis = synopsis;
     }
 
-    public String getdbMovieIMBDID(){
-        return movieIMBD_id;
-    }
-
-    public void setdbMovieIMBDID(String movieIMBD_id){
-        this.movieIMBD_id = movieIMBD_id;
-    }
-
-    public String getdbTitle() {
-        return title;
-    }
-
-    public void setdbTitle(String title) {
-        this.title = title;
-    }
-
-    public String getdbReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setdbReleaseDate(String releaseDate) {
-        this.releaseDate = releaseDate;
-    }
-
-    public String getdbPosterUrl() {
-        return posterUrl;
-    }
-
-    public void setdbPosterUrl(String posterUrlString) {
-        this.posterUrl = posterUrlString;
-    }
-
-    public String getdbAverageRating() {
-        return averageRating;
-    }
-
-    public void setdbAverageRating(String averageRating) {
-        this.averageRating = averageRating;
-    }
-
-    public int getdbId() {
+    public int getId() {
         return id;
     }
 
-    public void setdbId(int id) {
-        this.id = id;
+    public String getMovieIMBD_id() {
+        return movieIMBD_id;
     }
 
-    public String getdbSynopsis() {
+    public String getTitle() {
+        return title;
+    }
+
+    public String getReleaseDate() {
+        return releaseDate;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public String getAverageRating() {
+        return averageRating;
+    }
+
+    public String getSynopsis() {
         return synopsis;
     }
 
-    public void setdbSynopsis(String synopsis) {
-        this.synopsis = synopsis;
+    public void setId(int id) {
+        this.id = id;
     }
 
+    public void setMovieIMBD_id(String movieIMBD_id) {
+        this.movieIMBD_id = movieIMBD_id;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setReleaseDate(String releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
+    }
+
+    public void setAverageRating(String averageRating) {
+        this.averageRating = averageRating;
+    }
+
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
 }

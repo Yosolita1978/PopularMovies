@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import co.yosola.popularmovies.database.FavoritesDatabase;
+
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickLister {
 
@@ -40,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
     private Parcelable mSavedRecyclerLayoutState;
-
+    private FavoritesDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         // display progress bar, and load and display posters in preferred sort order
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progress_bar);
 
+        mDb = FavoritesDatabase.getInstance(getApplicationContext());
+
 
         //check for network connection
         if (!isNetworkAvailable()) {
@@ -87,7 +91,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         } else {
             //set the tittle of the app - default to 'popular movies'
             setTitle(titleBySort);
-
             //build the url string - default to 'popular movies'
             startMovieSearch(sortOrder);
 
@@ -95,17 +98,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
     }
 
-    /* Ensures a default sort value if app opens for first time, without interfering
-     * with onRestoreInstanceState() logic.
-     */
-    @Override
-    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        if (sortOrder == null) {
-            sortOrder = POPULAR;
-            startMovieSearch(sortOrder);
-        }
-    }
 
     //The void to check for network connection
     private boolean isNetworkAvailable() {
@@ -194,13 +186,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             sortOrder = FAVORITES;
             titleBySort = "Favorites Movies";
             setTitle(titleBySort);
-            loadFavorites();
+            loadNoFavorites();
             return true;
         }
         return super.onOptionsItemSelected(menuItem);
     }
 
-    private void loadFavorites() {
+    private void loadNoFavorites() {
         //Create placeholder text if there are no favorited items
         mRecyclerView.setVisibility(View.GONE);
         showErrorMessage();

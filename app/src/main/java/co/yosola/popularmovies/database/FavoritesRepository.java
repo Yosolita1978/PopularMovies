@@ -40,12 +40,12 @@ public class FavoritesRepository {
                                   String synopsis, String rating, String releaseDate) {
 
         Favorites favoriteMovie = new Favorites();
-        favoriteMovie.setdbMovieIMBDID(movieid);
-        favoriteMovie.setdbTitle(title);
-        favoriteMovie.setdbPosterUrl(posterUrl);
-        favoriteMovie.setdbSynopsis(synopsis);
-        favoriteMovie.setdbAverageRating(rating);
-        favoriteMovie.setdbReleaseDate(releaseDate);
+        favoriteMovie.setMovieIMBD_id(movieid);
+        favoriteMovie.setTitle(title);
+        favoriteMovie.setPosterUrl(posterUrl);
+        favoriteMovie.setSynopsis(synopsis);
+        favoriteMovie.setAverageRating(rating);
+        favoriteMovie.setReleaseDate(releaseDate);
 
         insertNewFavMovie(favoriteMovie);
     }

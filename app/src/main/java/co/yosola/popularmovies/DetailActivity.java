@@ -21,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -193,8 +194,10 @@ public class DetailActivity extends AppCompatActivity {
                     public void run() {
                         if (isFavorite) {
                             mDb.getFavoritesDao().deleteEntry(favoriteMovie);
+                            Log.d(TAG, "onDao: Deleting Movie" + favoriteMovie.getMovieIMBD_id() + " " + favoriteMovie.getId());
                         } else {
                             mDb.getFavoritesDao().insertFavorite(favoriteMovie);
+                            Log.d(TAG, "onDao: Adding Movie" + favoriteMovie.getMovieIMBD_id() + " " + favoriteMovie.getId());
                         }
                         runOnUiThread(new Runnable() {
                             @Override
@@ -212,12 +215,14 @@ public class DetailActivity extends AppCompatActivity {
     private void setFavorite(Boolean favorite) {
         if (favorite) {
             isFavorite = true;
-            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
             mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
+            //Toast.makeText(this.getBaseContext(), getResources().getString(R.string.editor_insert_ok), Toast.LENGTH_LONG).show();
         } else {
             isFavorite = false;
-            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
             mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
+            //Toast.makeText(this.getBaseContext(), getResources().getString(R.string.editor_insert_failed), Toast.LENGTH_LONG).show();
         }
     }
 
