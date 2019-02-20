@@ -1,23 +1,18 @@
 package co.yosola.popularmovies;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -26,6 +21,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
+
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -59,7 +55,6 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mContentReview;
     private Button mNextReview;
 
-    private MovieDbHelper mDbHelper;
     private FloatingActionButton mFab;
 
     // Helper method to return the TextView with no Trailers inside the LinearLayout
@@ -130,9 +125,6 @@ public class DetailActivity extends AppCompatActivity {
         mReviewList = findViewById(R.id.review_list);
 
         reviewCounter = 0;
-
-        // To access our database, we instantiate our subclass of SQLiteOpenHelper
-        mDbHelper = new MovieDbHelper(this);
 
         getIncomingIntent();
 
@@ -216,24 +208,10 @@ public class DetailActivity extends AppCompatActivity {
         // Setup FAB button
         mFab = (FloatingActionButton) findViewById(R.id.fab);
 
-        //If the movie is already in favorites, change the buttton and show the info
-        if (isTheMovieInFavorites(mMovieID)) {
-            //Change the button colors to the version on favorites
-            //displayDatabaseInfo();
-            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-            mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_white_24dp));
-        }
-
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (isTheMovieInFavorites(mMovieID)) {
-                    deleteFavoriteMovie(movie);
-                    //displayDatabaseInfo();
-                    return;
-                } else {
-                    insertFavoriteMovie(movie);
-                }
+                return;
             }
         });
     }
@@ -350,127 +328,6 @@ public class DetailActivity extends AppCompatActivity {
 
         return reviewView;
     }
-
-    /**
-     * Helper method to search is the movie is in the db or not
-     */
-    public boolean isTheMovieInFavorites(String id) {
-
-        Cursor cursor = getContentResolver().query(MovieContract.MoviesEntry.CONTENT_URI, null, null, null, null);
-        if (cursor.getCount() > 0) {
-
-            int columnId = cursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
-
-            while (cursor.moveToNext()) {
-
-                String movieId = cursor.getString(columnId);
-                if (id.equals(movieId)) {
-                    return true;
-                }
-            }
-            cursor.close();
-        }
-        return false;
-    }
-
-    /**
-     * Helper method to insert data into the database.
-     */
-    private void insertFavoriteMovie(Movie movie) {
-
-        if (!isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
-
-            // Create a ContentValues object where column names are the keys,
-
-            ContentValues mValues = new ContentValues();
-            mValues.put(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID, String.valueOf(movie.getMovieID()));
-            mValues.put(MovieContract.MoviesEntry.COLUMN_TITLE, movie.getmMovieTitle());
-            mValues.put(MovieContract.MoviesEntry.COLUMN_POSTER, movie.getmMoviePosterPath());
-            mValues.put(MovieContract.MoviesEntry.COLUMN_SYNOPSIS, movie.getmMovieSynopsis());
-            mValues.put(MovieContract.MoviesEntry.COLUMN_AVERAGE_RATING, movie.getmMovieVoteAverage());
-            mValues.put(MovieContract.MoviesEntry.COLUMN_RELEASE_DATE, movie.getmMovieReleaseDate());
-
-            // returning the ID of that new row.
-
-            Uri newUri = getContentResolver().insert(MovieContract.MoviesEntry.CONTENT_URI, mValues);
-
-            if (newUri == null) {
-                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
-                Toast.makeText(DetailActivity.this, getString(R.string.editor_insert_failed), Toast.LENGTH_SHORT).show();
-
-            } else {
-                //String tempid = newUri.getLastPathSegment();
-                //Log.d(TAG, "temp movieID:" + tempid);
-                //displayDatabaseInfo();
-                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-                mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_white_24dp));
-                Toast.makeText(DetailActivity.this,
-                        getString(R.string.editor_insert_ok), Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Log.d(TAG, "Movie already in db");
-        }
-    }
-
-    /**
-     * Helper method to delete data into the database.
-     */
-    private void deleteFavoriteMovie(Movie movie) {
-
-        if (isTheMovieInFavorites(String.valueOf(movie.getMovieID()))) {
-
-            // Create a ContentValues object where column names are the keys,
-            String selectionClause = MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID + " = ?";
-            String[] movieidDelete = {String.valueOf(movie.getMovieID())};
-            int rowsDeleted = 0;
-            rowsDeleted = getContentResolver().delete(MovieContract.MoviesEntry.CONTENT_URI, selectionClause, movieidDelete);
-
-            if (rowsDeleted < 0) {
-                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-                Toast.makeText(DetailActivity.this, getString(R.string.editor_delete_failed), Toast.LENGTH_SHORT).show();
-
-            } else {
-                //displayDatabaseInfo();
-                mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
-                mFab.setImageDrawable(getResources().getDrawable(R.drawable.ic_star_border_black_24dp));
-                Toast.makeText(DetailActivity.this,
-                        getString(R.string.editor_delete_ok), Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Log.d(TAG, "Movie is not in favorites");
-        }
-    }
-
-//    /**
-//     * Temporary helper method to display information in the onscreen
-//     */
-//    private void displayDatabaseInfo() {
-//
-//        Cursor mCursor = getContentResolver().query(MovieContract.MoviesEntry.CONTENT_URI, null, null, null, null);
-//
-//        if (mCursor.getCount() > 0) {
-//
-//            TextView displayView = (TextView) findViewById(R.id.trailers_title);
-//
-//            try {
-//
-//                displayView.setText("The table contains " + mCursor.getCount());
-//
-//                int idColumnIndex = mCursor.getColumnIndex(MovieContract.MoviesEntry.COLUMN_MOVIEIMBD_ID);
-//                while (mCursor.moveToNext()) {
-//                    String wantedId = mCursor.getString(idColumnIndex);
-//
-//                    displayView.append(("\n" + wantedId + "\n\n"));
-//
-//                }
-//
-//            } finally {
-//                // Always close the cursor when you're done reading from it. This releases all its
-//                // resources and makes it invalid.
-//                mCursor.close();
-//            }
-//        }
-//    }
 
     public class FetchTrailersTask extends AsyncTask<String, Void, String> {
         @Override

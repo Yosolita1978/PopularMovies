@@ -11,7 +11,7 @@ import java.net.URL;
 import java.util.Scanner;
 
 
-public class NetworkUtils {
+final public class NetworkUtils {
 
     final static String API_KEY_PARAM = "api_key";
     private static final String TAG = NetworkUtils.class.getSimpleName();
@@ -22,6 +22,9 @@ public class NetworkUtils {
     private static final String language = "en-US";
     // A method to storage my api key private. See the build.gradle for more details.
     private static final String apiKey = BuildConfig.ApiKey;
+
+    //The constructor should be overridden and marked as private so that they cannot be instantiated.
+    private NetworkUtils() { }
 
 
     /**
