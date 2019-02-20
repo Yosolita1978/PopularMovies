@@ -1,12 +1,20 @@
 package co.yosola.popularmovies;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModel;
+import android.arch.lifecycle.ViewModelProviders;
+import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -21,6 +29,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
+import co.yosola.popularmovies.database.AppExecutor;
+import co.yosola.popularmovies.database.Favorites;
+import co.yosola.popularmovies.database.FavoritesDatabase;
+
+import static java.lang.String.*;
 
 
 public class DetailActivity extends AppCompatActivity {
@@ -56,63 +72,10 @@ public class DetailActivity extends AppCompatActivity {
     private Button mNextReview;
 
     private FloatingActionButton mFab;
+    private FavoritesDatabase mDb;
+    private List<Favorites> favoriteData = new ArrayList<>();
 
-    // Helper method to return the TextView with no Trailers inside the LinearLayout
-    private static TextView createNoTrailersView(Context context, LinearLayout container) {
-        TextView trailerView = new TextView(context);
-        trailerView.setText(R.string.no_trailers);
-        trailerView.setPadding(0, 0, 0, 50);
-        trailerView.setTextSize(15);
-        container.addView(trailerView);
-
-        return trailerView;
-    }
-
-    // Helper method to return the ImageView inside the LinearLayout
-    private static ImageView createTrailerView(Context context, LinearLayout container, int index) {
-        ImageView trailerView = new ImageView(context);
-        setTrailerViewProperties(context, trailerView);
-        container.addView(trailerView, index);
-
-        return trailerView;
-    }
-
-    // Helper method to set an OnClickListener for each trailer in the results
-    private static void setTrailerOnClickListener(final Context context, ImageView trailerView, final String trailerKey) {
-        trailerView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                launchTrailer(context, trailerKey);
-            }
-        });
-    }
-
-    // Helper method to start the Youtube intent on each trailer in the list
-    private static void launchTrailer(Context context, String trailerKey) {
-        Uri youtubeLink = Uri.parse(TRAILER_BASE_URL + trailerKey);
-        Intent intent = new Intent(Intent.ACTION_VIEW, youtubeLink);
-
-        if (intent.resolveActivity(context.getPackageManager()) != null) {
-            context.startActivity(intent);
-        }
-    }
-
-    // Helper method to set all the Layout params in the LinearLayout trailer_list
-    private static void setTrailerViewProperties(Context context, ImageView trailerView) {
-
-        int width = (int) context.getResources().getInteger(R.integer.trailerWidth);
-        int height = (int) context.getResources().getInteger(R.integer.trailerHeight);
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
-
-        params.setMargins(16, 8, 16, 8);
-
-        trailerView.setLayoutParams(params);
-
-        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-    }
+    private boolean isFavorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,7 +93,6 @@ public class DetailActivity extends AppCompatActivity {
 
         new FetchTrailersTask().execute();
         new FetchReviewsTask().execute();
-
 
     }
 
@@ -160,12 +122,21 @@ public class DetailActivity extends AppCompatActivity {
         Movie detailMovie = intent.getParcelableExtra("Movie");
 
         int movieID = detailMovie.getMovieID();
-        mMovieId = String.valueOf(movieID);
+        mMovieId = valueOf(movieID);
         String movieTitle_temp = detailMovie.getmMovieTitle();
         String movieRelease_temp = detailMovie.getmMovieReleaseDate();
         String moviePoster_temp = detailMovie.getmMoviePosterPath();
         String movieVote_temp = detailMovie.getmMovieVoteAverage();
         String movieSynopsis_temp = detailMovie.getmMovieSynopsis();
+
+        mDb = FavoritesDatabase.getInstance(getApplicationContext());
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final Favorites favoriteMovie = mDb.getFavoritesDao().getItemByMovieId(mMovieId);
+                setFavorite((favoriteMovie != null)? true : false);
+            }
+        });
 
         if (movieTitle_temp != null && movieRelease_temp != null && moviePoster_temp != null && movieVote_temp != null && movieSynopsis_temp != null) {
             //Log.d(TAG, "getIncomingIntent: " + movieTitle_temp + movieRelease_temp + moviePoster_temp + movieVote_temp + movieSynopsis_temp);
@@ -184,7 +155,7 @@ public class DetailActivity extends AppCompatActivity {
         //Log.d(TAG, "setUI: setting the UI with the current Movie.");
 
 
-        final String mMovieID = String.valueOf(movie.getMovieID());
+        final String mMovieID = valueOf(movie.getMovieID());
         //Log.d(TAG, "setUI Movie " + mMovieID);
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
@@ -211,9 +182,43 @@ public class DetailActivity extends AppCompatActivity {
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                return;
+                final Favorites favoriteMovie = new Favorites(mMovieID,
+                                movie.getmMovieTitle(),
+                                movie.getmMovieReleaseDate(),
+                                movie.getmMoviePosterPath(),
+                                movie.getmMovieVoteAverage(),
+                                movie.getmMovieSynopsis());
+                AppExecutor.getInstance().diskIO().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isFavorite) {
+                            mDb.getFavoritesDao().deleteEntry(favoriteMovie);
+                        } else {
+                            mDb.getFavoritesDao().insertFavorite(favoriteMovie);
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setFavorite(!isFavorite);
+                            }
+                        });
+                    }
+                });
             }
         });
+    }
+
+    //Helper method to check if a Movie is already in Favorites
+    private void setFavorite(Boolean favorite) {
+        if (favorite) {
+            isFavorite = true;
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+            mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
+        } else {
+            isFavorite = false;
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+            mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
+        }
     }
 
     public void extractTrailerData(String trailersResponse) {
@@ -329,6 +334,22 @@ public class DetailActivity extends AppCompatActivity {
         return reviewView;
     }
 
+
+    // Helper to initialize the FavoriteView using Room as persistent data
+    private void setupViewModel() {
+        FavoritesViewModel viewModel = ViewModelProviders.of(this).get(FavoritesViewModel.class);
+        viewModel.getFavoriteMovies().observe(this, new Observer<List<Favorites>>() {
+            @Override
+            public void onChanged(@Nullable List<Favorites> favoriteMovies) {
+                Log.d(TAG, "onChanged: Updating list of movies from LiveData in ViewModel!!!" + favoriteMovies);
+                if (favoriteMovies.size() > 0) {
+                    favoriteData.clear();
+                    favoriteData = favoriteMovies;
+                }
+            }
+        });
+    }
+
     public class FetchTrailersTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... strings) {
@@ -365,6 +386,63 @@ public class DetailActivity extends AppCompatActivity {
             extractReviews(result);
             loadCorrectReviewUI();
         }
+    }
+
+    // Helper method to return the TextView with no Trailers inside the LinearLayout
+    private static TextView createNoTrailersView(Context context, LinearLayout container) {
+        TextView trailerView = new TextView(context);
+        trailerView.setText(R.string.no_trailers);
+        trailerView.setPadding(0, 0, 0, 50);
+        trailerView.setTextSize(15);
+        container.addView(trailerView);
+
+        return trailerView;
+    }
+
+    // Helper method to return the ImageView inside the LinearLayout
+    private static ImageView createTrailerView(Context context, LinearLayout container, int index) {
+        ImageView trailerView = new ImageView(context);
+        setTrailerViewProperties(context, trailerView);
+        container.addView(trailerView, index);
+
+        return trailerView;
+    }
+
+    // Helper method to set an OnClickListener for each trailer in the results
+    private static void setTrailerOnClickListener(final Context context, ImageView trailerView, final String trailerKey) {
+        trailerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                launchTrailer(context, trailerKey);
+            }
+        });
+    }
+
+    // Helper method to start the Youtube intent on each trailer in the list
+    private static void launchTrailer(Context context, String trailerKey) {
+        Uri youtubeLink = Uri.parse(TRAILER_BASE_URL + trailerKey);
+        Intent intent = new Intent(Intent.ACTION_VIEW, youtubeLink);
+
+        if (intent.resolveActivity(context.getPackageManager()) != null) {
+            context.startActivity(intent);
+        }
+    }
+
+    // Helper method to set all the Layout params in the LinearLayout trailer_list
+    private static void setTrailerViewProperties(Context context, ImageView trailerView) {
+
+        int width = (int) context.getResources().getInteger(R.integer.trailerWidth);
+        int height = (int) context.getResources().getInteger(R.integer.trailerHeight);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width, height);
+
+        params.setMargins(16, 8, 16, 8);
+
+        trailerView.setLayoutParams(params);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        trailerView.setScaleType(ImageView.ScaleType.CENTER_CROP);
     }
 
 }

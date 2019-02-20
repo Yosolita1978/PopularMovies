@@ -1,5 +1,6 @@
 package co.yosola.popularmovies.database;
 
+import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
@@ -7,18 +8,32 @@ import android.support.annotation.NonNull;
 @Entity(tableName = "favorites")
 public class Favorites {
 
-    // title, date, poster, average vote, synopsis, id
-    @PrimaryKey @NonNull
-    private String id;
+
+    @PrimaryKey(autoGenerate = true)
+    private int id;
+
+    @ColumnInfo(name = "movie_id")
     private String movieIMBD_id;
+
+    @ColumnInfo(name = "movie_title")
     private String title;
+
+    @ColumnInfo(name = "movie_release_date")
     private String releaseDate;
+
+    @ColumnInfo(name = "movie_poster_url")
     private String posterUrl;
+
+    @ColumnInfo(name = "movie_rating")
     private String averageRating;
+
+    @ColumnInfo(name = "movie_synopsis")
     private String synopsis;
 
+    public Favorites(){}
+
     public Favorites(String movieid, String title, String releaseDate,
-                          String posterUrlString, String averageRating, String synopsis, String id)
+                          String posterUrlString, String averageRating, String synopsis)
     {
         this.movieIMBD_id = movieid;
         this.title = title;
@@ -26,7 +41,6 @@ public class Favorites {
         this.posterUrl = posterUrlString;
         this.averageRating = averageRating;
         this.synopsis = synopsis;
-        this.id = id;
     }
 
     public String getdbMovieIMBDID(){
@@ -69,11 +83,11 @@ public class Favorites {
         this.averageRating = averageRating;
     }
 
-    public String getdbId() {
+    public int getdbId() {
         return id;
     }
 
-    public void setdbId(String id) {
+    public void setdbId(int id) {
         this.id = id;
     }
 

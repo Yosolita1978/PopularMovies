@@ -12,13 +12,19 @@ import java.util.List;
 
 @Dao
 public interface FavoritesDao {
-    @Query("SELECT * FROM favorites ORDER BY title")
+    @Query("SELECT * FROM favorites")
     LiveData<List<Favorites>> loadAllFavorites();
 
     @Query("SELECT * FROM favorites WHERE id = :id")
-    Favorites getItemById(Long id);
+    Favorites getItemById(int id);
 
-    @Insert
+    @Query("SELECT * FROM favorites WHERE movie_id = :movieid")
+    Favorites getItemByMovieId(String movieid);
+
+    @Query("SELECT * FROM Favorites WHERE movie_title LIKE :title")
+    Favorites getMovieByTitle(String title);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertFavorite(Favorites favoritesEntry);
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
