@@ -2,6 +2,7 @@ package co.yosola.popularmovies.database;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
@@ -30,15 +31,30 @@ public class Favorites {
 
     private String synopsis;
 
-    public Favorites(){}
+    public Favorites(){
 
+    }
+
+    @Ignore
     public Favorites(String movieid, String title, String releaseDate,
-                          String posterUrlString, String averageRating, String synopsis)
+                     String posterUrlString, String averageRating, String synopsis)
     {
         this.movieIMBD_id = movieid;
         this.title = title;
         this.releaseDate = releaseDate;
         this.posterUrl = posterUrlString;
+        this.averageRating = averageRating;
+        this.synopsis = synopsis;
+    }
+
+    public Favorites(int id, String movieIMBDid, String title, String releaseDate,
+                          String posterUrl, String averageRating, String synopsis)
+    {
+        this.id = id;
+        this.movieIMBD_id = movieIMBDid;
+        this.title = title;
+        this.releaseDate = releaseDate;
+        this.posterUrl = posterUrl;
         this.averageRating = averageRating;
         this.synopsis = synopsis;
     }

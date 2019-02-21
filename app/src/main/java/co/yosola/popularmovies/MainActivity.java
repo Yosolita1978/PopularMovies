@@ -16,6 +16,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.URL;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
     private Parcelable mSavedRecyclerLayoutState;
-    private FavoritesDatabase mDb;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +74,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         // display progress bar, and load and display posters in preferred sort order
         mLoadingIndicator = (ProgressBar) findViewById(R.id.progress_bar);
 
-        mDb = FavoritesDatabase.getInstance(getApplicationContext());
-
 
         //check for network connection
         if (!isNetworkAvailable()) {
@@ -85,19 +84,14 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         if (savedInstanceState != null) {
             sortOrder = savedInstanceState.getString(STATE_QUERY);
             titleBySort = savedInstanceState.getString(STATE_TITLE);
-            setTitle(titleBySort);
-            //build the url string
-            startMovieSearch(sortOrder);
         } else {
             //set the tittle of the app - default to 'popular movies'
             setTitle(titleBySort);
             //build the url string - default to 'popular movies'
             startMovieSearch(sortOrder);
-
         }
 
     }
-
 
     //The void to check for network connection
     private boolean isNetworkAvailable() {
@@ -111,6 +105,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         mLoadingIndicator.setVisibility(View.INVISIBLE);
         mErrorMessageDisplay.setVisibility(View.VISIBLE);
     }
+
 
     //Bring the Json and bind it with the adapter
     private void showJSONData(String jsonData) {
@@ -150,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         }
     }
 
+
     @Override
     public void onListItemClick(Movie movie) {
 
@@ -171,8 +167,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         int itemThatWasSelected = menuItem.getItemId();
         if (itemThatWasSelected == R.id.most_popular) {
             sortOrder = POPULAR;
+            titleBySort = "Popular Movies";
             setTitle(titleBySort);
             startMovieSearch(sortOrder);
+            Toast.makeText(this.getBaseContext(), sortOrder + titleBySort, Toast.LENGTH_LONG).show();
             return true;
         }
         if (itemThatWasSelected == R.id.top_rated) {
@@ -194,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
 
     private void loadNoFavorites() {
         //Create placeholder text if there are no favorited items
-        mRecyclerView.setVisibility(View.GONE);
+        mRecyclerView.setVisibility(View.INVISIBLE);
         showErrorMessage();
         mErrorMessageDisplay.setText(R.string.no_favorites);
     }
@@ -224,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         @Override
         protected void onPostExecute(String jsonData) {
             mLoadingIndicator.setVisibility(View.INVISIBLE);
+            mRecyclerView.setVisibility(View.VISIBLE);
             if (jsonData != null && !jsonData.equals("")) {
                 super.onPostExecute(jsonData);
                 showJSONData(jsonData);

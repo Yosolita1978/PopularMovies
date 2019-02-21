@@ -1,5 +1,7 @@
 package co.yosola.popularmovies.database;
 
+// referenced code from Udacity's
+
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -9,9 +11,8 @@ import java.util.concurrent.Executors;
 
 public class AppExecutor {
 
-    public static final Object LOCK = new Object();
-
     // For Singleton instantiation
+    private static final Object LOCK = new Object();
     private static AppExecutor sInstance;
     private final Executor diskIO;
     private final Executor mainThread;
@@ -25,7 +26,7 @@ public class AppExecutor {
 
     public static AppExecutor getInstance() {
         if (sInstance == null) {
-            synchronized (AppExecutor.LOCK) {
+            synchronized (LOCK) {
                 sInstance = new AppExecutor(Executors.newSingleThreadExecutor(),
                         Executors.newFixedThreadPool(3),
                         new MainThreadExecutor());

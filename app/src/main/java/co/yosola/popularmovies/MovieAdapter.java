@@ -75,11 +75,14 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     public void setPosterData(ArrayList<Movie> movies) {
         if (this.movieList != null) {
             this.movieList.clear();
-            this.movieList = movies;
-            notifyDataSetChanged();
         }
+        this.movieList = movies;
+        notifyDataSetChanged();
     }
 
+    public void clear() {
+        movieList.clear();
+    }
 
     public class MovieAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         public final ImageView mPoster;
@@ -99,5 +102,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
             listItemClickLister.onListItemClick(movie);
         }
     }
+
 
 }

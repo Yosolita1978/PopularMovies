@@ -9,9 +9,10 @@ import android.util.Log;
 @Database(entities = {Favorites.class}, version = 1, exportSchema = false)
 public abstract class FavoritesDatabase extends RoomDatabase {
 
+    private static final String LOG_TAG = FavoritesDatabase.class.getSimpleName();
     private static final String DATABASE_NAME = "favorites";
 
-    public abstract FavoritesDao getFavoritesDao();
+    public abstract FavoritesDao FavoritesDao();
 
     private static FavoritesDatabase db;
 
@@ -24,6 +25,7 @@ public abstract class FavoritesDatabase extends RoomDatabase {
                     .allowMainThreadQueries()
                     .build();
         }
+        Log.d(LOG_TAG, "Getting the database instance");
         return db;
     }
 

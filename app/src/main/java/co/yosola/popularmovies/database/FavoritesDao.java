@@ -13,13 +13,13 @@ import java.util.List;
 @Dao
 public interface FavoritesDao {
     @Query("SELECT * FROM favorites")
-    LiveData<List<Favorites>> loadAllFavorites();
+    List<Favorites> loadAllFavorites();
 
     @Query("SELECT * FROM favorites WHERE id = :id")
     Favorites getItemById(int id);
 
     @Query("SELECT * FROM favorites WHERE movieIMBD_id = :movieid")
-    Favorites getItemByMovieId(String movieid);
+    LiveData<Favorites> getItemByMovieId(String movieid);
 
     @Query("SELECT * FROM Favorites WHERE title LIKE :title")
     Favorites getMovieByTitle(String title);
