@@ -19,7 +19,7 @@ public interface FavoritesDao {
     Favorites getItemById(int id);
 
     @Query("SELECT * FROM favorites WHERE movieIMBD_id = :movieid")
-    LiveData<Favorites> getItemByMovieId(String movieid);
+    Favorites getItemByMovieId(String movieid);
 
     @Query("SELECT * FROM Favorites WHERE title LIKE :title")
     Favorites getMovieByTitle(String title);

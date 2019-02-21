@@ -1,18 +1,13 @@
 package co.yosola.popularmovies;
 
-import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -28,7 +23,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
-import java.util.List;
 
 import co.yosola.popularmovies.database.AppExecutor;
 import co.yosola.popularmovies.database.Favorites;
@@ -150,7 +144,7 @@ public class DetailActivity extends AppCompatActivity {
         //Log.d(TAG, "setUI: setting the UI with the current Movie.");
 
 
-        final String mMovieID = valueOf(movie.getMovieID());
+        final String mMovieID = String.valueOf(movie.getMovieID());
         //Log.d(TAG, "setUI Movie " + mMovieID);
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
@@ -173,32 +167,25 @@ public class DetailActivity extends AppCompatActivity {
 
         // Setup FAB button
         mFab = (FloatingActionButton) findViewById(R.id.fab);
-
-        if(isMovieInFavorites(movie))
-        {
-            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-            mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
-            isFavorite = true;
-        }
-
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(!isFavorite){
+                if(isFavorite){
                     deleteFromFavorites(movie);
-                    isFavorite = false;
                     mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
                     mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.editor_delete_ok), Toast.LENGTH_LONG).show();
+
                 } else {
                     insertInFavorites(movie);
-                    isFavorite = true;
                     mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
                     mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.editor_insert_ok), Toast.LENGTH_LONG).show();
                 }
             }
         });
+
+        checkFavorite(movie);
     }
 
     //Temporal helper method to insert a movie is in Favorites, using Room.
@@ -212,7 +199,12 @@ public class DetailActivity extends AppCompatActivity {
         String movieSynopsis = movie.getmMovieSynopsis();
 
         final Favorites favoriteMovie = new Favorites(movieIMBDID, movietitle, movieRelease, moviePoster, movieRating, movieSynopsis);
-        mDb.FavoritesDao().insertFavorite(favoriteMovie);
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                mDb.FavoritesDao().insertFavorite(favoriteMovie);
+            }
+        });
 
     }
 
@@ -220,27 +212,44 @@ public class DetailActivity extends AppCompatActivity {
     private void deleteFromFavorites(Movie movie){
         String movietitle = movie.getmMovieTitle();
         final Favorites favoriteMovie = mDb.FavoritesDao().getMovieByTitle(movietitle);
-        mDb.FavoritesDao().deleteEntry(favoriteMovie);
-    }
-
-    
-    private boolean isMovieInFavorites(Movie movie){
-        String movieId = String.valueOf(movie.getMovieID());
-
-        List<Favorites> favoritesList = mDb.FavoritesDao().loadAllFavorites();
-        if(favoritesList == null){
-            return false;
-        } else{
-            for(int i = 0; i < favoritesList.size(); i++){
-                Favorites favoritesMovie = favoritesList.get(i);
-                if(movieId.equals(favoritesMovie.getMovieIMBD_id())){
-                    return true;
-                }
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                mDb.FavoritesDao().deleteEntry(favoriteMovie);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+                        mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
+                    }
+                });
             }
-        }
-        return false;
+        });
     }
 
+    private void checkFavorite(Movie movie){
+        final String movieID = String.valueOf(movie.getMovieID());
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final Favorites favoriteMovie = mDb.FavoritesDao().getItemByMovieId(movieID);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(favoriteMovie != null){
+                            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+                            mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
+                            isFavorite = true;
+                        } else {
+                            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+                            mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
+                            isFavorite = false;
+                        }
+                    }
+                });
+            }
+        });
+    }
 
     public void extractTrailerData(String trailersResponse) {
         try {
