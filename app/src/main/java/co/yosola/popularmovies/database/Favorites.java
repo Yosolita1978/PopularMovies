@@ -35,7 +35,7 @@ public class Favorites {
 
     }
 
-
+    @Ignore
     public Favorites(String movieid, String title, String releaseDate,
                      String posterUrlString, String averageRating, String synopsis)
     {
@@ -47,7 +47,7 @@ public class Favorites {
         this.synopsis = synopsis;
     }
 
-    @Ignore
+
     public Favorites(int id, String movieIMBDid, String title, String releaseDate,
                           String posterUrl, String averageRating, String synopsis)
     {

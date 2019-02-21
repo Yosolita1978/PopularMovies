@@ -28,8 +28,6 @@ import co.yosola.popularmovies.database.AppExecutor;
 import co.yosola.popularmovies.database.Favorites;
 import co.yosola.popularmovies.database.FavoritesDatabase;
 
-import static java.lang.String.*;
-
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -84,9 +82,6 @@ public class DetailActivity extends AppCompatActivity {
         reviewCounter = 0;
 
         getIncomingIntent();
-
-        new FetchTrailersTask().execute();
-        new FetchReviewsTask().execute();
 
     }
 
@@ -144,7 +139,7 @@ public class DetailActivity extends AppCompatActivity {
         //Log.d(TAG, "setUI: setting the UI with the current Movie.");
 
 
-        final String mMovieID = String.valueOf(movie.getMovieID());
+        mMovieId = String.valueOf(movie.getMovieID());
         //Log.d(TAG, "setUI Movie " + mMovieID);
 
         mMovieTitle = findViewById(R.id.movie_title_detail);
@@ -170,7 +165,7 @@ public class DetailActivity extends AppCompatActivity {
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isFavorite){
+                if (isFavorite) {
                     deleteFromFavorites(movie);
                     mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
                     mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
@@ -186,10 +181,12 @@ public class DetailActivity extends AppCompatActivity {
         });
 
         checkFavorite(movie);
+        new FetchTrailersTask().execute();
+        new FetchReviewsTask().execute();
     }
 
-    //Temporal helper method to insert a movie is in Favorites, using Room.
-    private void insertInFavorites(Movie movie){
+    //Helper method to insert a movie is in Favorites, using Room.
+    private void insertInFavorites(Movie movie) {
 
         String movieIMBDID = String.valueOf(movie.getMovieID());
         String movietitle = movie.getmMovieTitle();
@@ -208,8 +205,8 @@ public class DetailActivity extends AppCompatActivity {
 
     }
 
-    //Temporal helper method to delete a movie is in Favorites, using Room.
-    private void deleteFromFavorites(Movie movie){
+    //Helper method to delete a movie is in Favorites, using Room.
+    private void deleteFromFavorites(Movie movie) {
         String movietitle = movie.getmMovieTitle();
         final Favorites favoriteMovie = mDb.FavoritesDao().getMovieByTitle(movietitle);
         AppExecutor.getInstance().diskIO().execute(new Runnable() {
@@ -227,7 +224,8 @@ public class DetailActivity extends AppCompatActivity {
         });
     }
 
-    private void checkFavorite(Movie movie){
+    //Helper method to check if a movie is in Favorites db.
+    private void checkFavorite(Movie movie) {
         final String movieID = String.valueOf(movie.getMovieID());
         AppExecutor.getInstance().diskIO().execute(new Runnable() {
             @Override
@@ -236,7 +234,7 @@ public class DetailActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if(favoriteMovie != null){
+                        if (favoriteMovie != null) {
                             mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
                             mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
                             isFavorite = true;

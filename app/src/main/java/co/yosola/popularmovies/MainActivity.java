@@ -21,7 +21,10 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
+import co.yosola.popularmovies.database.AppExecutor;
+import co.yosola.popularmovies.database.Favorites;
 import co.yosola.popularmovies.database.FavoritesDatabase;
 
 
@@ -43,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
     private Parcelable mSavedRecyclerLayoutState;
+    private FavoritesDatabase mDb;
 
 
     @Override
@@ -81,16 +85,19 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             mErrorMessageDisplay.setText(R.string.error_message_internet);
         }
 
-        if (savedInstanceState != null) {
+        if (savedInstanceState != null)
+        {
             sortOrder = savedInstanceState.getString(STATE_QUERY);
             titleBySort = savedInstanceState.getString(STATE_TITLE);
-        } else {
-            //set the tittle of the app - default to 'popular movies'
-            setTitle(titleBySort);
-            //build the url string - default to 'popular movies'
-            startMovieSearch(sortOrder);
         }
 
+        //set the tittle of the app - default to 'popular movies'
+        setTitle(titleBySort);
+        //build the url string - default to 'popular movies'
+        startMovieSearch(sortOrder);
+
+        // Initialize member variable for the data base
+        mDb = FavoritesDatabase.getInstance(getApplicationContext());
     }
 
     //The void to check for network connection
@@ -184,17 +191,47 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             sortOrder = FAVORITES;
             titleBySort = "Favorites Movies";
             setTitle(titleBySort);
-            loadNoFavorites();
+            loadFavorites();
             return true;
         }
         return super.onOptionsItemSelected(menuItem);
     }
+    
+    // Helper method for reading the favorites from db.
+    private void loadFavorites(){
+        final ArrayList<Movie> moviesFavorites = new ArrayList<Movie>();
+        AppExecutor.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final List<Favorites> favoritesList = mDb.FavoritesDao().loadAllFavorites();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(favoritesList.size() == 0){
+                            mRecyclerView.setVisibility(View.INVISIBLE);
+                            showErrorMessage();
+                            mErrorMessageDisplay.setText(R.string.no_favorites);
+                        }else {
 
-    private void loadNoFavorites() {
-        //Create placeholder text if there are no favorited items
-        mRecyclerView.setVisibility(View.INVISIBLE);
-        showErrorMessage();
-        mErrorMessageDisplay.setText(R.string.no_favorites);
+                            for(int i = 0; i < favoritesList.size(); i++){
+                                Favorites favoriteTemp = favoritesList.get(i);
+                                Movie favoriteMovie = new Movie();
+                                String movieIMDBID = favoriteTemp.getMovieIMBD_id();
+                                favoriteMovie.setMovieID(Integer.valueOf(movieIMDBID));
+                                favoriteMovie.setMovieTitle(favoriteTemp.getTitle());
+                                favoriteMovie.setMovieReleaseDate(favoriteTemp.getReleaseDate());
+                                favoriteMovie.setMovieVoteSynopsis(favoriteTemp.getSynopsis());
+                                favoriteMovie.setMoviePosterPath(favoriteTemp.getPosterUrl());
+                                favoriteMovie.setMovieVoteAverage(favoriteTemp.getAverageRating());
+                                moviesFavorites.add(favoriteMovie);
+                                mMovieAdapter.setPosterData(moviesFavorites);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
     }
 
     //Async inner class to fetch network data
