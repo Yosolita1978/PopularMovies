@@ -13,7 +13,7 @@ import java.util.List;
 @Dao
 public interface FavoritesDao {
     @Query("SELECT * FROM favorites")
-    List<Favorites> loadAllFavorites();
+    LiveData<List<Favorites>> loadAllFavorites();
 
     @Query("SELECT * FROM favorites WHERE id = :id")
     Favorites getItemById(int id);
@@ -26,9 +26,6 @@ public interface FavoritesDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertFavorite(Favorites favoritesEntry);
-
-    @Update(onConflict = OnConflictStrategy.REPLACE)
-    void updateEntry(Favorites favoritesEntry);
 
     @Delete
     void deleteEntry(Favorites favoritesEntry);

@@ -1,5 +1,8 @@
 package co.yosola.popularmovies;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -16,16 +19,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import co.yosola.popularmovies.database.AppExecutor;
 import co.yosola.popularmovies.database.Favorites;
-import co.yosola.popularmovies.database.FavoritesDatabase;
+import co.yosola.popularmovies.database.FavoritesRepository;
 
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.ListItemClickLister {
@@ -46,7 +47,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
     private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
     private Parcelable mSavedRecyclerLayoutState;
-    private FavoritesDatabase mDb;
+    private FavoritesRepository mFavRepo;
+    private DetailViewModel mDetailViewModel;
 
 
     @Override
@@ -85,8 +87,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             mErrorMessageDisplay.setText(R.string.error_message_internet);
         }
 
-        if (savedInstanceState != null)
-        {
+        if (savedInstanceState != null) {
             sortOrder = savedInstanceState.getString(STATE_QUERY);
             titleBySort = savedInstanceState.getString(STATE_TITLE);
         }
@@ -97,7 +98,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         startMovieSearch(sortOrder);
 
         // Initialize member variable for the data base
-        mDb = FavoritesDatabase.getInstance(getApplicationContext());
+        mFavRepo = new FavoritesRepository(getApplication());
+        mDetailViewModel = ViewModelProviders.of(this).get(DetailViewModel.class);
     }
 
     //The void to check for network connection
@@ -177,7 +179,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
             titleBySort = "Popular Movies";
             setTitle(titleBySort);
             startMovieSearch(sortOrder);
-            Toast.makeText(this.getBaseContext(), sortOrder + titleBySort, Toast.LENGTH_LONG).show();
             return true;
         }
         if (itemThatWasSelected == R.id.top_rated) {
@@ -196,41 +197,41 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.List
         }
         return super.onOptionsItemSelected(menuItem);
     }
-    
-    // Helper method for reading the favorites from db.
-    private void loadFavorites(){
-        final ArrayList<Movie> moviesFavorites = new ArrayList<Movie>();
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                final List<Favorites> favoritesList = mDb.FavoritesDao().loadAllFavorites();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(favoritesList.size() == 0){
-                            mRecyclerView.setVisibility(View.INVISIBLE);
-                            showErrorMessage();
-                            mErrorMessageDisplay.setText(R.string.no_favorites);
-                        }else {
 
-                            for(int i = 0; i < favoritesList.size(); i++){
-                                Favorites favoriteTemp = favoritesList.get(i);
-                                Movie favoriteMovie = new Movie();
-                                String movieIMDBID = favoriteTemp.getMovieIMBD_id();
-                                favoriteMovie.setMovieID(Integer.valueOf(movieIMDBID));
-                                favoriteMovie.setMovieTitle(favoriteTemp.getTitle());
-                                favoriteMovie.setMovieReleaseDate(favoriteTemp.getReleaseDate());
-                                favoriteMovie.setMovieVoteSynopsis(favoriteTemp.getSynopsis());
-                                favoriteMovie.setMoviePosterPath(favoriteTemp.getPosterUrl());
-                                favoriteMovie.setMovieVoteAverage(favoriteTemp.getAverageRating());
-                                moviesFavorites.add(favoriteMovie);
-                                mMovieAdapter.setPosterData(moviesFavorites);
-                            }
-                        }
-                    }
-                });
+    // Helper method for saw the liveData favorites from db.
+    private void loadFavorites() {
+
+        final LiveData<List<Favorites>> favoriteslist = mDetailViewModel.getAllFavorites();
+        favoriteslist.observe(this, new Observer<List<Favorites>>() {
+            @Override
+            public void onChanged(@Nullable List<Favorites> favorites) {
+                populateFavorites(favorites);
             }
         });
+    }
+
+    // Helper method to populate the UI if there is favorites or not
+    private void populateFavorites(List<Favorites> favorites) {
+
+        if (favorites.size() == 0) {
+            mRecyclerView.setVisibility(View.INVISIBLE);
+            showErrorMessage();
+            mErrorMessageDisplay.setText(R.string.no_favorites);
+        } else {
+            ArrayList<Movie> favMoviesArray = new ArrayList<Movie>(favorites.size());
+            for (int i = 0; i < favorites.size(); i++) {
+                Favorites favMovie = favorites.get(i);
+                Movie tempMovie = new Movie();
+                tempMovie.setMovieID(Integer.valueOf(favMovie.getMovieIMBD_id()));
+                tempMovie.setMovieTitle(favMovie.getTitle());
+                tempMovie.setMovieReleaseDate(favMovie.getReleaseDate());
+                tempMovie.setMovieVoteSynopsis(favMovie.getSynopsis());
+                tempMovie.setMoviePosterPath(favMovie.getPosterUrl());
+                tempMovie.setMovieVoteAverage(favMovie.getAverageRating());
+                favMoviesArray.add(tempMovie);
+            }
+            mMovieAdapter.setPosterData(favMoviesArray);
+        }
 
     }
 

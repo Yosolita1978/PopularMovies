@@ -1,5 +1,6 @@
 package co.yosola.popularmovies;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
@@ -24,9 +25,8 @@ import org.json.JSONObject;
 
 import java.net.URL;
 
-import co.yosola.popularmovies.database.AppExecutor;
 import co.yosola.popularmovies.database.Favorites;
-import co.yosola.popularmovies.database.FavoritesDatabase;
+import co.yosola.popularmovies.database.FavoritesRepository;
 
 
 public class DetailActivity extends AppCompatActivity {
@@ -62,8 +62,9 @@ public class DetailActivity extends AppCompatActivity {
     private Button mNextReview;
 
     private FloatingActionButton mFab;
-    // Create AppDatabase member variable for the Database
-    private FavoritesDatabase mDb;
+    // Create variable for the Database using Room
+    private FavoritesRepository mFavRepo;
+    private DetailViewModel mDetailViewModel;
     private boolean isFavorite = false;
 
 
@@ -80,7 +81,7 @@ public class DetailActivity extends AppCompatActivity {
         mReviewList = findViewById(R.id.review_list);
 
         reviewCounter = 0;
-
+        mFavRepo = new FavoritesRepository(getApplication());
         getIncomingIntent();
 
     }
@@ -119,7 +120,7 @@ public class DetailActivity extends AppCompatActivity {
         String movieSynopsis_temp = detailMovie.getmMovieSynopsis();
 
         // Initialize member variable for the data base
-        mDb = FavoritesDatabase.getInstance(getApplicationContext());
+        mDetailViewModel = ViewModelProviders.of(this).get(DetailViewModel.class);
 
 
         if (movieTitle_temp != null && movieRelease_temp != null && moviePoster_temp != null && movieVote_temp != null && movieSynopsis_temp != null) {
@@ -187,66 +188,29 @@ public class DetailActivity extends AppCompatActivity {
 
     //Helper method to insert a movie is in Favorites, using Room.
     private void insertInFavorites(Movie movie) {
-
-        String movieIMBDID = String.valueOf(movie.getMovieID());
-        String movietitle = movie.getmMovieTitle();
-        String movieRelease = movie.getmMovieReleaseDate();
-        String moviePoster = movie.getmMoviePosterPath();
-        String movieRating = movie.getmMovieVoteAverage();
-        String movieSynopsis = movie.getmMovieSynopsis();
-
-        final Favorites favoriteMovie = new Favorites(movieIMBDID, movietitle, movieRelease, moviePoster, movieRating, movieSynopsis);
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                mDb.FavoritesDao().insertFavorite(favoriteMovie);
-            }
-        });
-
+        mFavRepo.insertNewFav(movie);
     }
 
     //Helper method to delete a movie is in Favorites, using Room.
     private void deleteFromFavorites(Movie movie) {
+
         String movietitle = movie.getmMovieTitle();
-        final Favorites favoriteMovie = mDb.FavoritesDao().getMovieByTitle(movietitle);
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                mDb.FavoritesDao().deleteEntry(favoriteMovie);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
-                        mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
-                    }
-                });
-            }
-        });
+        Favorites movieFav = mFavRepo.getMovieByTitle(movietitle);
+        if (movieFav != null) {
+            mFavRepo.deleteFavMovie(movieFav);
+        }
     }
 
     //Helper method to check if a movie is in Favorites db.
     private void checkFavorite(Movie movie) {
-        final String movieID = String.valueOf(movie.getMovieID());
-        AppExecutor.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-                final Favorites favoriteMovie = mDb.FavoritesDao().getItemByMovieId(movieID);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (favoriteMovie != null) {
-                            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
-                            mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
-                            isFavorite = true;
-                        } else {
-                            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
-                            mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
-                            isFavorite = false;
-                        }
-                    }
-                });
-            }
-        });
+        isFavorite = mDetailViewModel.isFavorite(movie);
+        if (isFavorite) {
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_on)));
+            mFab.setImageResource(R.drawable.ic_star_border_white_24dp);
+        } else {
+            mFab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.favorite_button_off)));
+            mFab.setImageResource(R.drawable.ic_star_border_black_24dp);
+        }
     }
 
     public void extractTrailerData(String trailersResponse) {
