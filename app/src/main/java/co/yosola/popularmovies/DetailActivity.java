@@ -39,6 +39,11 @@ public class DetailActivity extends AppCompatActivity {
     private static final String LAST_XCOORD = "stateXCoord";
     private static final String LAST_YCOORD = "stateYCoord";
 
+    public static final String RESULTS_JSON = "results";
+    public static final String KEY_JSON = "key";
+    public static final String AUTHOR_JSON = "author";
+    public static final String CONTENT_JSON = "content";
+
     //Variables to the Movie Object
     private ScrollView mDetailScrollView;
     private String mMovieId;
@@ -216,12 +221,12 @@ public class DetailActivity extends AppCompatActivity {
     public void extractTrailerData(String trailersResponse) {
         try {
             JSONObject trailersJSON = new JSONObject(trailersResponse);
-            JSONArray trailersArray = trailersJSON.getJSONArray("results");
+            JSONArray trailersArray = trailersJSON.getJSONArray(RESULTS_JSON);
             mTrailerKeys = new String[trailersArray.length()];
 
             for (int i = 0; i < trailersArray.length(); i++) {
 
-                mTrailerKeys[i] = trailersArray.getJSONObject(i).optString("key");
+                mTrailerKeys[i] = trailersArray.getJSONObject(i).optString(KEY_JSON);
 
             }
 
@@ -258,12 +263,12 @@ public class DetailActivity extends AppCompatActivity {
     public void extractReviews(String reviewsResponse) {
         try {
             JSONObject jsonReviewsObject = new JSONObject(reviewsResponse);
-            JSONArray reviewsResults = jsonReviewsObject.getJSONArray("results");
+            JSONArray reviewsResults = jsonReviewsObject.getJSONArray(RESULTS_JSON);
             mReviewAuthors = new String[reviewsResults.length()];
             mReviewContent = new String[reviewsResults.length()];
             for (int i = 0; i < reviewsResults.length(); i++) {
-                mReviewAuthors[i] = reviewsResults.getJSONObject(i).optString("author");
-                mReviewContent[i] = reviewsResults.getJSONObject(i).optString("content");
+                mReviewAuthors[i] = reviewsResults.getJSONObject(i).optString(AUTHOR_JSON);
+                mReviewContent[i] = reviewsResults.getJSONObject(i).optString(CONTENT_JSON);
             }
         } catch (JSONException e) {
             e.printStackTrace();
